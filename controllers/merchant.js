@@ -4,7 +4,7 @@
     require("dotenv").config();
     const multer=require('multer')
     const path = require('path')
-    
+    baseUrl="http://localhost:8080/api/dev/merchant/"
     //registering Merchants
     const register=async(req,res)=>{
         //check if merchant exists
@@ -24,16 +24,18 @@
             
             //generating token
             const auth_token=jwt.sign({id:newData.merchant_id},process.env.JWT_SECERETE)
-            
+            const fileName = req.file.filename;
+            const imageUrl = baseUrl + fileName;
             //create merchant
             await merchant.create(newData)
             .then((newMerchant)=>{
                 return res.status(201).json({
+                    status:201,
                     message:"Merchant created successfully",
                     data:{
                         merchant_id: newMerchant.merchant_id,
                         email: newMerchant.email,
-                        contact: newMerchant.contact,
+                        contact: newMerchant.mobile,
                         business_name: newMerchant.business_name,
                         business_address1: newMerchant.business_address1,
                         business_address2: newMerchant.business_address2,
@@ -41,7 +43,7 @@
                         currency: newMerchant.currency,
                         currencyvalue: newMerchant.currencyvalue,
                         _package: newMerchant._package,
-                        image: newMerchant.image,
+                        image: imageUrl,
                         latitude: newMerchant.latitude,
                         longitude: newMerchant.longitude,
                         referral_code: newMerchant.referral_code||'',
@@ -78,24 +80,12 @@
         },
         fileFilter: async function (req, file, cb) {
             try{
-                // Check file type (if needed)
-                // Check file size
                 if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
                     return cb(new Error('Only JPG, JPEG, and PNG files are allowed!'))
                 }
-                if (file.size > 2 * 1024  *1024) {
-                    return cb(new Error('File size exceeds 2MB limit!'));
-                }
-    
-                // Check aspect ratio (1:1)
-                // const dimensions = sizeOf(file.path);
-                // const width = dimensions.width;
-                // const height = dimensions.height;
-                // if (width !== height) {
-                //     return cb(new Error('Image must have a 1:1 aspect ratio!'));
+                // if (file.size > 2 * 1024  *1024) {
+                //     return cb(new Error('File size exceeds 2MB limit!'));
                 // }
-    
-                // Pass the validation
                 cb(null, true);
             } catch (error) {
                 cb(error, true);
