@@ -4,7 +4,7 @@ const merchant=require('../controllers/merchant')
 const validator=require('../middlewares/validation/userValidation')
 
 
-router.post('/auth/register', ((req, res, next)=> {
+router.post('/register', ((req, res, next)=> {
     merchant.uploadImg.single('image')(req, res, function(err) {
         if (err) {
             console.error(err);
@@ -14,4 +14,5 @@ router.post('/auth/register', ((req, res, next)=> {
     });
 }), validator.addNewUser, merchant.register)
 
+router.post('/login', validator.loginNewUser, merchant.login)
 module.exports=router

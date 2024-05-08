@@ -29,10 +29,28 @@ const addNewUser= async(req,res,next)=>{
     });
 }
 
-
+//validation for merchant login
+const loginNewUser= async(req,res,next)=>{
+    let validator=new Validator(req.body,{
+        email:'required|email',
+        password:'required',
+        device_token:'required'
+    });
+    validator.check().then((matched)=>{
+        if(!matched){
+            res.status(400).send({
+                message: (Object.values(validator.errors))[0].message,
+                status: "false",
+                data: []
+            })
+        }
+        else{next()}
+    });
+}
 
 
 //exporting Modules
 module.exports={
-    addNewUser
+    addNewUser,
+    loginNewUser
 }

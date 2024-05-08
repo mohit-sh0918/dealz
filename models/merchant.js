@@ -51,16 +51,13 @@ const merchant = sequelize.define("merchant", {
     image:{
         type:DataTypes.STRING
     },
-    latitute:{
+    latitude:{
         type:DataTypes.STRING
     },
-    longitute:{
+    longitude:{
         type:DataTypes.STRING
     },
     referal_code:{
-        type:DataTypes.STRING
-    },
-    auth_token:{
         type:DataTypes.STRING
     },
     type:{
