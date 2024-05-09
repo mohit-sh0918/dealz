@@ -9,7 +9,8 @@ const internal = require("stream");
 const baseUrl = "https://dealz-2mm8.onrender.com/";
 const mail=require("../helper/mailer");
 const OTP = require("../models/otp");
-const crypto = require("crypto")
+const crypto = require("crypto");
+const { throws } = require("assert");
 
 //utility functions
 function generateOTP() {
@@ -66,14 +67,7 @@ const register = async (req, res) => {
     const merchantExists = await merchant.findOne({
       where: { email: data.email },
     });
-    if (merchantExists) {
-      return res.status(400).json({
-        status: 400,
-        message: "Merchant already exists",
-        data: {},
-      });
-    }
-
+    if (merchantExists) throw new Error("Merchant already Exists")
     //bcrypting the password
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(data.password, salt);
@@ -121,7 +115,9 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.log(err);
-    return res.send(err);
+    return res.json({
+      status:"400"
+    });
   }
 };
 
@@ -134,6 +130,7 @@ const login = async (req, res) => {
     if (!userMerchant) {
       return res.status(400).json({
         status: 400,
+        code:"400",
         message: "Merchant not found",
         data: {},
       });
@@ -142,6 +139,7 @@ const login = async (req, res) => {
     if (!isCorrect) {
       return res.status(400).json({
         status: 400,
+        code:"400",
         message: "Invalid Password",
       });
     }
@@ -178,7 +176,11 @@ const login = async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(400).send("user not found");
+    return res.status(400).json({
+        status: 400,
+        code:"400",
+        message: "Merchant not found",
+    })
   }
 };
 

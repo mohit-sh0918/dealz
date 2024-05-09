@@ -15,7 +15,7 @@ router.post('/merchant/register', ((req, res, next)=> {
 }), validator.addNewUser, merchant.register)
 
 router.post('/merchant/login', validator.loginNewUser, merchant.login)
-router.get('/get/merchant/profile', validator.verifyToken,merchant.merchantProfile)
+router.post('/get/merchant/profile', validator.verifyToken,merchant.merchantProfile)
 router.post('/change/merchant/password',validator.verifyToken,merchant.changePassword)
 router.post('/merchant/forgot/password',merchant.forgetPassword)
 router.get('/get/country',getCountryCode)
