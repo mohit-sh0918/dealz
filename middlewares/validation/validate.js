@@ -1,4 +1,9 @@
 const {Validator}=require('node-input-validator')
+const jwt=require("jsonwebtoken");
+const merchant = require('../../models/merchant');
+const { where } = require('sequelize');
+require("dotenv").config();
+
 
 //validation for registration of new user
 const addNewUser= async(req,res,next)=>{
@@ -48,9 +53,41 @@ const loginNewUser= async(req,res,next)=>{
     });
 }
 
+//verify token
+const verifyToken=async(req,res,next)=>{
+    let token=req.body.token
+    if (!token) {
+        return res.status(400).json({
+        status: 400,
+        message: "Token is required",
+        data: {},
+        });
+    }
+    try
+    {
+        const id=jwt.verify(token,process.env.JWT_SECERETE )
+        const verifyId=await merchant.findOne({where:{merchant_id:id.id}})
+        if(!verifyId){
+            return res.status(400).json({
+                status:400,
+                message:"token is invalid",
+                data:{}
+            })
+        }
+        req.id=id.id
+            next()
+}catch(err){
+    res.status(500).json({
+        status:500,
+        message:"Internal server error",
+        data:{}
+    })
+}
+}
 
 //exporting Modules
 module.exports={
     addNewUser,
-    loginNewUser
+    loginNewUser,
+    verifyToken
 }
