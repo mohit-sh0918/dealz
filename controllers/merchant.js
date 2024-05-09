@@ -252,7 +252,7 @@ const changePassword = async (req, res) => {
       .update({ password: hash }, { where: { merchant_id: id} })
       .then((res) => {
         res.status(200).json({
-          status: 200,
+          status: "OK",
           message: "Password changed successfully",
         });
       });

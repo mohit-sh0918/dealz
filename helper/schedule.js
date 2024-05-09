@@ -2,7 +2,7 @@ const { Op } = require("sequelize");
 const OTP=require('../models/otp')
 const corn=require('node-cron')
 
-const deleteOtp=corn.schedule('*/1 * * * *',async()=>{
+const deleteOtp=corn.schedule('*/10 * * * *',async()=>{
     const currentTime=new Date();
     try {
         await OTP.destroy({where:{
