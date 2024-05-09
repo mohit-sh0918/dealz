@@ -151,7 +151,7 @@ const login = async (req, res) => {
       { expiresIn: "24h" }
     );
     res.status(200).json({
-      status: 200,
+      status:"OK",
       message: "Merchant logged In successfully",
       data: {
         merchant_id: userMerchant.merchant_id,

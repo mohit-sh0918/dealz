@@ -22,4 +22,4 @@ app.use('/api', merchant_routes)
 
 app.listen(port, () => {
     console.log(`server is running at ${port}`);
-});
+});     
