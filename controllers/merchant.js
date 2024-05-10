@@ -11,6 +11,8 @@ const mail=require("../helper/mailer");
 const OTP = require("../models/otp");
 const crypto = require("crypto");
 const { throws } = require("assert");
+const countryCode=require("../config/csvjson.json");
+const createError = require("../helper/error");
 
 //utility functions
 function generateOTP() {
@@ -57,17 +59,34 @@ const uploadImg = multer({
     }
   },
 });
-
+const getCountryCode=async(req,res,next)=>{
+  try {
+      const data=[];
+      for(i in countryCode)
+          data.push({
+              "country_id": countryCode[i].ID, 
+              "code": countryCode[i].CountryCode, 
+              "name": countryCode[i].ValueEn,
+              "currency": countryCode[i].CurrencyCode })
+      return res.status(200).json({
+          status:"OK",
+          message:"",
+          data:data
+      })
+  }catch(err){
+      next(err)
+  }
+}
 
 //registering Merchants
-const register = async (req, res) => {
+const register = async (req, res,next) => {
   //check if merchant exists
   try {
     const data = req.body;
     const merchantExists = await merchant.findOne({
       where: { email: data.email },
     });
-    if (merchantExists) throw new Error("Merchant already Exists")
+    if (merchantExists) throw next(createError(400,"merchant exists"))
     //bcrypting the password
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(data.password, salt);
@@ -87,7 +106,7 @@ const register = async (req, res) => {
     );
     //sending response
     return res.status(201).json({
-      status: 200,
+      status: "OK",
       message: "Merchant created successfully",
       data: {
         merchant_id: newMerchant.merchant_id,
@@ -114,35 +133,19 @@ const register = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log(err);
-    return res.json({
-      status:"400"
-    });
+    next(err)
   }
 };
 
 //login Merchant
-const login = async (req, res) => {
+const login = async (req, res,next) => {
   try {
     const { email, password } = req.body;
     const userMerchant = await merchant.findOne({ where: { email: email } });
 
-    if (!userMerchant) {
-      return res.status(400).json({
-        status: 400,
-        code:"400",
-        message: "Merchant not found",
-        data: {},
-      });
-    }
+    if (!userMerchant) throw next(400,"No User found")
     const isCorrect = await bcrypt.compare(password, userMerchant.password);
-    if (!isCorrect) {
-      return res.status(400).json({
-        status: 400,
-        code:"400",
-        message: "Invalid Password",
-      });
-    }
+    if (!isCorrect) throw next(401,"Invalid Credentials")
     const auth_token = jwt.sign(
       { id: userMerchant.merchant_id },
       process.env.JWT_SECERETE,
@@ -176,31 +179,21 @@ const login = async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(400).json({
-        status: 400,
-        code:"400",
-        message: "Merchant not found",
-    })
+    next(err)
   }
 };
 
 //get profile of merchant
-const merchantProfile = async (req, res) => {
+const merchantProfile = async (req, res,next) => {
   try {
     const id = req.id
 
     const userMerchant = await merchant.findOne({
       where: { merchant_id: id },
     });
-    if (!userMerchant) {
-      return res.status(404).json({
-        status: 404,
-        message: "Merchant not found",
-        data: {},
-      });
-    }
+    if (!userMerchant) throw next(404,"Merchant not found")
     return res.status(200).json({
-      status: 200,
+      status: "OK",
       message: "Merchant profile",
       data: {
         merchant_id: userMerchant.merchant_id,
@@ -227,12 +220,12 @@ const merchantProfile = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log(err);
+    next(err)
   }
 };
 
 //change merchant password
-const changePassword = async (req, res) => {
+const changePassword = async (req,res,next) => {
   try {
     const { old_password, new_password } = req.body;
     const id=req.id
@@ -240,36 +233,27 @@ const changePassword = async (req, res) => {
       where: { merchant_id: id },
     });
     const isCorrect = await bcrypt.compare(old_password, userMerchant.password);
-    if (!isCorrect) {
-      return res.status(400).json({
-        status: 400,
-        message: "Invalid Password",
-      });
-    }
+    if (!isCorrect) throw next(400,"Invalid Password")
     const salt = await bcrypt.genSalt(10);
     const hash = bcrypt.hashSync(new_password, salt);
     await merchant
       .update({ password: hash }, { where: { merchant_id: id} })
-      .then((res) => {
+      .then((result) => {
         res.status(200).json({
           status: "OK",
           message: "Password changed successfully",
         });
       });
   } catch (err) {
-    // console.log(err);
-    return res.status(500).json({
-      status: 500,
-      message: "internal server error",
-    });
+    next(err)
   }
 };
 
 //forget password
-const forgetPassword=async(req,res)=>{
+const forgetPassword=async(req,res,next)=>{
   try{
     const email=req.body.email;
-    if(!email)throw new Error("invalid email");
+    if(!email)throw next(404,"Invalid Credentials")
     const merchant_id=await merchant.findOne({
       attributes:[
         'merchant_id'
@@ -278,8 +262,7 @@ const forgetPassword=async(req,res)=>{
         email:email
       }
     })
-    console.log(merchant_id.merchant_id)
-    if(!merchant_id)throw new Error("invalid email");
+    if(!merchant_id)throw next(404,"Invalid Credentials");
     const otp=generateOTP()
     const date1 = new Date();
     const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
@@ -303,11 +286,7 @@ const forgetPassword=async(req,res)=>{
       })
     }))
   }catch(err){
-    console.log(err)
-    return res.status(500).json({
-      status: 500,
-      message: "internal Server Error",
-    })
+    next(err)
   }
 }
 module.exports = {
@@ -316,5 +295,6 @@ module.exports = {
   login,
   merchantProfile,
   changePassword,
-  forgetPassword
+  forgetPassword,
+  getCountryCode
 }; 
