@@ -3,13 +3,10 @@ const { Sequelize, DataTypes } = require('sequelize')
 
 
 
-//{ "status": "", "message": "", 
-//"data": { "merchant_id": "", "email": "", "contact": "", "business_name": "", "business_address1": "", 
-//"business_address2": "", "country": "", "currency": "", "currencyvalue": "", "_package": "", "image": "", 
-//"latitute": "", "longitude": "", "referal_code": "", "auth_token": "", "type": "", "parent_id": "", "subscription": "", 
-//"expiry": "", "is_expired": "", "trial_period": "" } }
 
-const merchant = sequelize.define("merchant", {
+
+const merchant = sequelize.define("merchant", 
+{
     merchant_id: {
         type : DataTypes.INTEGER,
         autoIncrement : true,
@@ -18,15 +15,9 @@ const merchant = sequelize.define("merchant", {
     password:{
         type:DataTypes.STRING,
     },
-    // name: {
-    //     type: DataTypes.STRING,
-    // },
     email: {
         type: DataTypes.STRING,
     },
-    // contact: {
-    //     type: DataTypes.STRING,
-    // },
     business_name:{
         type: DataTypes.STRING,
     },
@@ -61,6 +52,7 @@ const merchant = sequelize.define("merchant", {
         type:DataTypes.STRING
     },
     type:{
+        defaultValue:"Merchant",
         type:DataTypes.STRING
     },
     parent_id:{
@@ -87,8 +79,7 @@ const merchant = sequelize.define("merchant", {
 
 },
 {
-    freezeTableName: true,
-    timeStamps: false
+    freezeTableName: true
 })
 
 merchant.sync({alter : true})

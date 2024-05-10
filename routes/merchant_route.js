@@ -3,6 +3,7 @@ const router=express.Router();
 const merchant=require('../controllers/merchant')
 const validator=require('../middlewares/validation/validate')
 
+
 router.post('/merchant/register', ((req, res, next)=> {
     merchant.uploadImg.single('image')(req, res, function(err) {
         if (err) {
@@ -18,5 +19,29 @@ router.post('/get/merchant/profile', validator.verifyToken,merchant.merchantProf
 router.post('/change/merchant/password',validator.verifyToken,merchant.changePassword)
 router.post('/merchant/forgot/password',merchant.forgetPassword)
 router.get('/get/country',merchant.getCountryCode)
+
+router.post('/add/deal',((req, res, next)=> {
+    merchant.uploadImg.single('image')(req, res, function(err) {
+        if (err) {
+            console.error(err);
+            return res.send(err.message);
+        }
+        next();
+    });
+}),validator.addDeal,merchant.addDeal)
+
+router.post('/edit/deal',((req, res, next)=> {
+    merchant.uploadImg.single('image')(req, res, function(err) {
+        if (err) {
+            console.error(err);
+            return res.send(err.message);
+        }
+        next();
+    });
+}),validator.editDeal,merchant.editDeal)
+
+router.post('/delete/deal',validator.verifyToken,merchant.deleteDeal)
+router.get('/get/category',merchant.getCategory)
+
 
 module.exports=router

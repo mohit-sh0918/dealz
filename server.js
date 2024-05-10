@@ -2,10 +2,9 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const merchant_routes=require('./routes/merchant_route')
-// const merchant = require('.//merchant')
+// const merchant = require('./models/merchant')
+// const deals = require('./models/deals')
 const cors=require('cors')
-const bodyParser=require('body-parser')
-const otpCleanUp=require("./helper/schedule")
 
 const port = process.env.PORT || 8080;
 

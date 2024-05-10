@@ -13,6 +13,8 @@ const crypto = require("crypto");
 const { throws } = require("assert");
 const countryCode=require("../config/csvjson.json");
 const createError = require("../helper/error");
+const Category=require("../models/category")
+const Deal=require("../models/deals")
 
 //utility functions
 function generateOTP() {
@@ -138,14 +140,14 @@ const register = async (req, res,next) => {
 };
 
 //login Merchant
-const login = async (req, res,next) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const userMerchant = await merchant.findOne({ where: { email: email } });
 
-    if (!userMerchant) throw next(400,"No User found")
+    if (!userMerchant) throw new Error("No User found")
     const isCorrect = await bcrypt.compare(password, userMerchant.password);
-    if (!isCorrect) throw next(401,"Invalid Credentials")
+    if (!isCorrect) throw new Error("Invalid Credentials")
     const auth_token = jwt.sign(
       { id: userMerchant.merchant_id },
       process.env.JWT_SECERETE,
@@ -179,7 +181,11 @@ const login = async (req, res,next) => {
       },
     });
   } catch (err) {
-    next(err)
+    return res.status(404).json({
+      status:false,
+      code:1052,
+      message: err.message
+    })
   }
 };
 
@@ -289,6 +295,99 @@ const forgetPassword=async(req,res,next)=>{
     next(err)
   }
 }
+
+//add deals 
+const addDeal=async(req,res,next)=>{
+  try {
+      const token_id =jwt.verify(req.body.token,process.env.JWT_SECERETE);
+      const fileName = req.file.filename;
+      const imageUrl = baseUrl + fileName;
+      const category=req.body.category;
+      const category_id=await Category.findOne({where:{category_name:category}});
+      const deal=req.body;
+      const newDeal={
+        ...deal,
+        user_id:token_id.id,
+        category_id:category_id.category_id,
+        image:imageUrl,
+      }
+      await Deal.create(newDeal)
+      .then((result)=>{
+        res.status(200).json({
+          status:"OK",
+            message:"Deal added successfully",
+        })
+      })
+  } catch (err) {
+      next(err)
+  }
+}
+
+//edit deals
+const editDeal=async(req,res,next)=>{
+  try {
+      const isDeal_id=await Deal.findOne({where:{deal_id:req.body.deal_id}})
+      if(!isDeal_id)throw next(createError(400,"invalid deal id"))
+      const token_id =jwt.verify(req.body.token,process.env.JWT_SECERETE);
+      const fileName = req.file.filename;
+      const imageUrl = baseUrl + fileName;
+      const category=req.body.category;
+      const category_id=await Category.findOne({where:{category_name:category}});
+      const deal=req.body;
+      const newDeal={
+        ...deal,
+        user_id:token_id.id,
+        category_id:category_id.category_id,
+        image:imageUrl,
+      }
+      await Deal.update(newDeal,{where:{deal_id:req.body.deal_id}})
+      .then((result)=>{
+        res.status(200).json({
+          status:"OK",
+            message:"Deal updated successfully",
+        })
+      })
+  } catch (err) {
+      next(err)
+  }
+}
+//delete deal
+const deleteDeal=async(req,res,next)=>{
+  try {
+    const token_id=jwt.verify(req.body.token,process.env.JWT_SECERETE)
+    const auth=await Deal.findOne({where:{user_id:token_id.id}})
+    if(!auth)throw next(createError(404,"Unauthroised access"))
+    const verifyDeal=await Deal.findOne({where:{deal_id:req.body.deal_id}})
+      if(!verifyDeal) throw Error("No deal found")
+    await Deal.destroy({where:{deal_id:req.body.deal_id}})
+    .then((result)=>{
+      res.status(200).json({
+        status:"OK",
+          message:"Deal deleted successfully",
+    })
+  })
+  } catch (err) {
+    return res.status(500).json({
+      status:false,
+      message:err.message
+    })
+  }
+}
+
+const getCategory=async(req,res,next)=>{
+  try {
+    const category=await Category.findAll()
+    res.status(200).json({
+      status:"OK",
+      message:"All the Category",
+      data:{
+        category:category
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+}
 module.exports = {
   register,
   uploadImg,
@@ -296,5 +395,9 @@ module.exports = {
   merchantProfile,
   changePassword,
   forgetPassword,
-  getCountryCode
+  getCountryCode,
+  addDeal,
+  editDeal,
+  deleteDeal,
+  getCategory
 }; 
