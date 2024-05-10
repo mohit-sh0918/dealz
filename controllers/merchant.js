@@ -299,7 +299,7 @@ const forgetPassword=async(req,res,next)=>{
 //add deals 
 const addDeal=async(req,res,next)=>{
   try {
-      const token_id =jwt.verify(req.body.token,process.env.JWT_SECERETE);
+      const token_id =req.id;
       const fileName = req.file.filename;
       const imageUrl = baseUrl + fileName;
       const category=req.body.category;
@@ -307,7 +307,7 @@ const addDeal=async(req,res,next)=>{
       const deal=req.body;
       const newDeal={
         ...deal,
-        user_id:token_id.id,
+        user_id:token_id,
         category_id:category_id.category_id,
         image:imageUrl,
       }
@@ -326,9 +326,9 @@ const addDeal=async(req,res,next)=>{
 //edit deals
 const editDeal=async(req,res,next)=>{
   try {
-      const isDeal_id=await Deal.findOne({where:{deal_id:req.body.deal_id}})
-      if(!isDeal_id)throw next(createError(400,"invalid deal id"))
-      const token_id =jwt.verify(req.body.token,process.env.JWT_SECERETE);
+      // const isDeal_id=await Deal.findOne({where:{deal_id:req.body.deal_id}})
+      // if(!isDeal_id)throw next(createError(400,"invalid deal id"))
+      const token_id =req.id
       const fileName = req.file.filename;
       const imageUrl = baseUrl + fileName;
       const category=req.body.category;
@@ -336,7 +336,7 @@ const editDeal=async(req,res,next)=>{
       const deal=req.body;
       const newDeal={
         ...deal,
-        user_id:token_id.id,
+        user_id:token_id,
         category_id:category_id.category_id,
         image:imageUrl,
       }
@@ -354,9 +354,8 @@ const editDeal=async(req,res,next)=>{
 //delete deal
 const deleteDeal=async(req,res,next)=>{
   try {
-    const token_id=jwt.verify(req.body.token,process.env.JWT_SECERETE)
-    const auth=await Deal.findOne({where:{user_id:token_id.id}})
-    if(!auth)throw next(createError(404,"Unauthroised access"))
+    // const auth=await Deal.findOne({where:{user_id:token_id.id}})
+    // if(!auth)throw next(createError(404,"Unauthroised access"))
     const verifyDeal=await Deal.findOne({where:{deal_id:req.body.deal_id}})
       if(!verifyDeal) throw Error("No deal found")
     await Deal.destroy({where:{deal_id:req.body.deal_id}})

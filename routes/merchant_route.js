@@ -28,7 +28,7 @@ router.post('/add/deal',((req, res, next)=> {
         }
         next();
     });
-}),validator.addDeal,merchant.addDeal)
+}),validator.addDeal,validator.verifyToken,merchant.addDeal)
 
 router.post('/edit/deal',((req, res, next)=> {
     merchant.uploadImg.single('image')(req, res, function(err) {
@@ -38,7 +38,7 @@ router.post('/edit/deal',((req, res, next)=> {
         }
         next();
     });
-}),validator.editDeal,merchant.editDeal)
+}),validator.editDeal,validator.verifyToken,merchant.editDeal)
 
 router.post('/delete/deal',validator.verifyToken,merchant.deleteDeal)
 router.get('/get/category',merchant.getCategory)
