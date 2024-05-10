@@ -19,7 +19,7 @@ const addNewUser= async(req,res,next)=>{
         country:'required',
         currency:'required',
         currencyvalue:'required',
-        _package:'required',
+        package:'required',
         latitude:'required',
         longitude:'required',
     });
@@ -34,7 +34,32 @@ const addNewUser= async(req,res,next)=>{
         else{next()}
     });
 }
-
+//validation of edit merchant
+const editUser= async(req,res,next)=>{
+    let validator=new Validator(req.body,{
+        device_token:'required',
+        business_name:'required',
+        business_address1:'required',
+        business_address2:'required',
+        mobile:'required',
+        country:'required',
+        currency:'required',
+        currencyvalue:'required',
+        package:'required',
+        latitude:'required',
+        longitude:'required',
+    });
+    validator.check().then((matched)=>{
+        if(!matched){
+            res.status(400).send({
+                message: (Object.values(validator.errors))[0].message,
+                status: "false",
+                data: []
+            })
+        }
+        else{next()}
+    });
+}
 //validation for merchant login
 const loginNewUser= async(req,res,next)=>{
     let validator=new Validator(req.body,{
@@ -139,5 +164,6 @@ module.exports={
     loginNewUser,
     verifyToken,
     addDeal,
-    editDeal
+    editDeal,
+    editUser
 }

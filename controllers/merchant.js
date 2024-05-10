@@ -254,7 +254,48 @@ const changePassword = async (req,res,next) => {
     next(err)
   }
 };
-
+//edit merchant profile
+const editMercantProfile=async(req,res,next)=>{
+  try {
+    const data=req.body;
+    const id=req.id
+    const fileName = req.file.filename;
+    const imageUrl = baseUrl + fileName;
+    const newdata={...data,image:imageUrl}
+    await merchant.update(newdata,{where:{merchant_id:id}})
+    const userMerchant=await merchant.findOne({where:{merchant_id:id}})
+    res.status(200).json({
+      status: "OK",
+      message: "Profile updated successfully",
+      data:{
+        merchant_id: userMerchant.merchant_id,
+        email: userMerchant.email,
+        contact: userMerchant.mobile,
+        business_name: userMerchant.business_name,
+        business_address1: userMerchant.business_address1,
+        business_address2: userMerchant.business_address2,
+        country: userMerchant.country,
+        currency: userMerchant.currency,
+        currencyvalue: userMerchant.currencyvalue,
+        _package: userMerchant._package,
+        image: userMerchant.image,
+        latitude: userMerchant.latitude,
+        longitude: userMerchant.longitude,
+        referral_code: userMerchant.referral_code || "",
+        auth_token: req.body.token,
+        type: userMerchant.type || "",
+        parent_id: userMerchant.parent_id || "",
+        subscription: userMerchant.subscription || "",
+        expiry: userMerchant.expiry || "",
+        is_expired: userMerchant.is_expired || "",
+        trial_period: userMerchant.trial_period || "",
+      }
+    });
+    
+  } catch (err) { 
+    next(err)
+  }
+}
 //forget password
 const forgetPassword=async(req,res,next)=>{
   try{
@@ -373,6 +414,8 @@ const deleteDeal=async(req,res,next)=>{
   }
 }
 
+
+//get category
 const getCategory=async(req,res,next)=>{
   try {
     const category=await Category.findAll()
@@ -398,5 +441,6 @@ module.exports = {
   addDeal,
   editDeal,
   deleteDeal,
-  getCategory
+  getCategory,
+  editMercantProfile
 }; 
