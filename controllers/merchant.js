@@ -344,7 +344,7 @@ const addDeal=async(req,res,next)=>{
       const fileName = req.file.filename;
       const imageUrl = baseUrl + fileName;
       const category=req.body.category;
-      const category_id=await Category.findOne({where:{category_name:category}});
+      const category_id=await Category.findOne({where:{name:category}});
       const deal=req.body;
       const newDeal={
         ...deal,
@@ -373,7 +373,7 @@ const editDeal=async(req,res,next)=>{
       const fileName = req.file.filename;
       const imageUrl = baseUrl + fileName;
       const category=req.body.category;
-      const category_id=await Category.findOne({where:{category_name:category}});
+      const category_id=await Category.findOne({where:{name:category}});
       const deal=req.body;
       const newDeal={
         ...deal,
@@ -393,7 +393,7 @@ const editDeal=async(req,res,next)=>{
   }
 }
 //delete deal
-const deleteDeal=async(req,res,next)=>{
+const deleteDeal=async(req,res)=>{
   try {
     // const auth=await Deal.findOne({where:{user_id:token_id.id}})
     // if(!auth)throw next(createError(404,"Unauthroised access"))
@@ -413,8 +413,6 @@ const deleteDeal=async(req,res,next)=>{
     })
   }
 }
-
-
 //get category
 const getCategory=async(req,res,next)=>{
   try {
