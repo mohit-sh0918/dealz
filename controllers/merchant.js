@@ -14,7 +14,8 @@ const { throws } = require("assert");
 const countryCode=require("../config/csvjson.json");
 const createError = require("../helper/error");
 const Category=require("../models/category")
-const Deal=require("../models/deals")
+const Deal=require("../models/deals");
+const member = require("../models/member");
 
 //utility functions
 function generateOTP() {
@@ -428,6 +429,87 @@ const getCategory=async(req,res,next)=>{
     next(err)
   }
 }
+//add memeber
+const addMember=async(req,res,next)=>{
+  try {
+    //check if memeber is a merchant
+    const pass=bcrypt.hashSync(req.body.password,bcrypt.genSaltSync(10))
+    const data={...req.body, merchant_id:req.id,password:pass}
+    const newMember=await member.create(data)
+    .then((result)=>{
+      res.status(200).json({
+        status:"OK",
+        message:"Member added successfully",
+      })
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+//edit member
+const editMember=async(req,res,next)=>{
+  try {
+    const data=req.body;
+    const member_id=await member.findOne({where:{id:data.member_id}})
+    console.log(member_id)
+    if(!member_id)
+      throw next(createError(400,"Invalid Credentials"))
+    if(req.id!=member_id.merchant_id)
+      throw next(createError(404,"Unauthorised Access"))
+    const pass=bcrypt.hashSync(data.password,bcrypt.genSaltSync(10))
+    const newData={...data,password:pass}
+    const newMember=await member.update(newData,{where:{id:data.member_id}})
+    .then((newMember)=>{
+      res.status(200).json({
+        status:"OK",
+        message:"Member updated successfully",
+      })
+    })
+  }catch(err){
+    next(err)
+  }
+}
+//delete member
+const deleteMember=async(req,res,next)=>{
+  try{
+    const data=req.body;
+    const findMember=await member.findOne({where:{id:data.member_id}})
+    if(!findMember)throw next(createError(400,"Invalid Member"))
+    if(req.id!=findMember.merchant_id)throw next(createError(404,"Unauthorised Access"))
+    await member.destroy({where:{id:data.member_id}})
+  .then((result)=>{
+    res.status(200).json({
+      status:"OK",
+      message:"Member deleted successfully"
+    })
+  })
+  }catch(err){
+    next(err)
+  }
+}
+//get all members
+const getAllMember=async(req,res,next)=>{
+  try {
+    const findMember=await member.findAll({where:{merchant_id:req.id}})
+    if(!findMember)throw next(createError(400,"No Member Found"))
+    const data=[]
+    for(i in findMember)
+      data[i]={
+          parent_id:findMember[i].id,
+          name:findMember[i].name,
+          email:findMember[i].email,
+          merchant_id:findMember.merchant_id,
+          password:findMember[i].password
+        }
+    res.status(200).json({
+      status:"OK",
+      message:"Members Found",
+      data:data
+    })
+  } catch (err) {
+    next(err)
+  }
+}
 module.exports = {
   register,
   uploadImg,
@@ -440,5 +522,9 @@ module.exports = {
   editDeal,
   deleteDeal,
   getCategory,
-  editMercantProfile
+  editMercantProfile,
+  addMember,
+  editMember,
+  deleteMember,
+  getAllMember
 }; 

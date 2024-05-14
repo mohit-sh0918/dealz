@@ -4,7 +4,8 @@ require("dotenv").config();
 const merchant_routes=require('./routes/merchant_route')
 // const merchant = require('./models/merchant')
 // const deals = require('./models/deals')
-const cors=require('cors')
+const cors=require('cors');
+const member = require("./models/member");
 
 const port = process.env.PORT || 8080;
 

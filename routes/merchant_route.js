@@ -52,6 +52,9 @@ router.post('/edit/deal',((req, res, next)=> {
 
 router.post('/delete/deal',validator.verifyToken,merchant.deleteDeal)
 router.get('/get/category',merchant.getCategory)
-
+router.post('/add/member',validator.verifyToken,merchant.addMember)
+router.post('/edit/member',validator.verifyToken,merchant.editMember)
+router.post('/delete/member',validator.verifyToken,merchant.deleteMember)
+router.post('/all/member',validator.verifyToken,merchant.getAllMember)
 
 module.exports=router
