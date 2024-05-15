@@ -52,7 +52,7 @@ const merchant = sequelize.define("merchant",
         type:DataTypes.STRING
     },
     type:{
-        defaultValue:"Merchant",
+        defaultValue:"merchant",
         type:DataTypes.STRING
     },
     parent_id:{

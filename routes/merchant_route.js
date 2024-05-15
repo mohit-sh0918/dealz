@@ -56,5 +56,6 @@ router.post('/add/member',validator.verifyToken,merchant.addMember)
 router.post('/edit/member',validator.verifyToken,merchant.editMember)
 router.post('/delete/member',validator.verifyToken,merchant.deleteMember)
 router.post('/all/member',validator.verifyToken,merchant.getAllMember)
+router.post('/all/deal',validator.verifyToken,merchant.getAllDeals)
 
 module.exports=router

@@ -16,6 +16,7 @@ const createError = require("../helper/error");
 const Category=require("../models/category")
 const Deal=require("../models/deals");
 const member = require("../models/member");
+const deal = require("../models/deals");
 
 //utility functions
 function generateOTP() {
@@ -344,13 +345,11 @@ const addDeal=async(req,res,next)=>{
       const token_id =req.id;
       const fileName = req.file.filename;
       const imageUrl = baseUrl + fileName;
-      const category=req.body.category;
-      const category_id=await Category.findOne({where:{name:category}});
       const deal=req.body;
       const newDeal={
         ...deal,
         user_id:token_id,
-        category_id:category_id.category_id,
+        category_id:deal.category,
         image:imageUrl,
       }
       await Deal.create(newDeal)
@@ -510,6 +509,15 @@ const getAllMember=async(req,res,next)=>{
     next(err)
   }
 }
+//get all deals
+const getAllDeals=async(req,res,next)=>{
+  try {
+    const data = await deal.findAll({where:{user_id:req.id}})
+    console.log(data)
+  }catch(err){
+
+  }
+}
 module.exports = {
   register,
   uploadImg,
@@ -526,5 +534,6 @@ module.exports = {
   addMember,
   editMember,
   deleteMember,
-  getAllMember
+  getAllMember,
+  getAllDeals
 }; 
