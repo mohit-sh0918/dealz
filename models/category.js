@@ -21,5 +21,5 @@ const category = sequelize.define("category",
     }
 )
 
-category.sync({alter:true})
+category.sync({alter:false})
 module.exports=category;
