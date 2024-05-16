@@ -13,15 +13,17 @@ const addNewUser= async(req,res,next)=>{
         email:'required|email',
         password:'required',
         business_name:'required',
-        business_address1:'required',
-        business_address2:'required',
+        business_address_1:'required',
+        business_address_2:'required',
         mobile:'required',
         country:'required',
         currency:'required',
-        currencyvalue:'required',
+        currency_value:'required',
         package:'required',
         latitude:'required',
         longitude:'required',
+        referal_code:'required'
+
     });
     validator.check().then((matched)=>{
         if(!matched){
@@ -39,15 +41,16 @@ const editUser= async(req,res,next)=>{
     let validator=new Validator(req.body,{
         device_token:'required',
         business_name:'required',
-        business_address1:'required',
-        business_address2:'required',
+        business_address_1:'required',
+        business_address_2:'required',
         mobile:'required',
         country:'required',
         currency:'required',
-        currencyvalue:'required',
+        currency_value:'required',
         package:'required',
         latitude:'required',
         longitude:'required',
+        referal_code:'required'
     });
     validator.check().then((matched)=>{
         if(!matched){
@@ -84,10 +87,10 @@ const verifyToken=async(req,res,next)=>{
     try
     {   
         let token=req.body.token
-        if (!token) throw next(createError(500,"Invalid Token"))
+        if (!token) throw next(createError(401,"error","Invalid Token"))
         const verifyToken=jwt.decode(token)
         const expiryTime=verifyToken.exp*1000;
-        if(Date.now()>expiryTime)throw next(createError(404,"Invalid User"))
+        if(Date.now()>expiryTime)throw next(createError(401,"error","Token expired"))
         const id=jwt.verify(token,process.env.JWT_SECERETE )
         const verifyId=await merchant.findOne({where:{merchant_id:id.id}})
         if(!verifyId)throw new Error("Invalid token")

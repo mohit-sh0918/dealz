@@ -2,6 +2,7 @@
 const sequelize = require("./index");
 const { DataTypes } = require("sequelize");
 const category=require("./category");
+const merchant = require("./merchant");
 // Define Deal model
 const deal=sequelize.define("deal",
 {
@@ -10,9 +11,13 @@ const deal=sequelize.define("deal",
         primaryKey: true,
         autoIncrement: true,
     },
-    user_id:{
+    merchant_id:{
         type: DataTypes.INTEGER,
         allowNull: false,
+        references:{
+            model:merchant,
+            key:"merchant_id",
+        }
     },
     type: {
         type: DataTypes.STRING,
@@ -38,7 +43,7 @@ const deal=sequelize.define("deal",
         type: DataTypes.INTEGER,
         references: {
             model: category,
-            key: "category_id",
+            key: 'category_id',
         },
         onUpdate: 'CASCADE', 
         onDelete: 'CASCADE'
@@ -67,8 +72,9 @@ const deal=sequelize.define("deal",
 // Establishing association between Category and Deal
 category.hasMany(deal, { foreignKey: "category_id", onDelete: "CASCADE", onUpdate: "CASCADE" });
 deal.belongsTo(category, { foreignKey: "category_id",onDelete: "CASCADE", onUpdate: "CASCADE" });
-
-deal.sync({alter:true})
+merchant.hasMany(deal,{ foreignKey: "merchant_id", onDelete: "CASCADE", onUpdate: "CASCADE" });
+deal.belongsTo(merchant,{ foreignKey: "merchant_id",onDelete: "CASCADE", onUpdate: "CASCADE" });
+deal.sync({alter:false})
 
 
 // Export models

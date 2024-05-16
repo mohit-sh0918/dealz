@@ -1,9 +1,9 @@
 {
     "database": {
-        "username": "avnadmin",
-        "password": "AVNS_xhAlPqkeYAm9jmhPMEa",
-        "host": "mysql-f7dd962-cisinlabs-9c72.a.aivencloud.com",
-        "port": 21540,
+        "username": "root",
+        "password": "mohit",
+        "host": "localhost",
+        "port": 3306,
         "database": "dealz",
         "ssl": true
     }

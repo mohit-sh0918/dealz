@@ -16,6 +16,5 @@ const deleteOtp=corn.schedule('*/10 * * * *',async()=>{
     }
 })
 
-module.exports={
-    deleteOtp
-}
+
+module.exports= deleteOtp

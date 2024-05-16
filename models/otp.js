@@ -31,5 +31,5 @@ const OTP = sequelize.define("otp", {
 })
 
  
-OTP.sync({alter:true})
+OTP.sync({alter:false})
 module.exports = OTP

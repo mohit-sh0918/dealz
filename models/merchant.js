@@ -21,10 +21,10 @@ const merchant = sequelize.define("merchant",
     business_name:{
         type: DataTypes.STRING,
     },
-    business_address1:{
+    business_address_1:{
         type:DataTypes.STRING
     },
-    business_address2:{
+    business_address_2:{
         type:DataTypes.STRING,
     },
     country:{
@@ -33,10 +33,10 @@ const merchant = sequelize.define("merchant",
     currency:{
         type:DataTypes.STRING,
     },
-    currencyvalue:{
+    currency_value:{
         type:DataTypes.STRING,
     },
-    _package:{
+    package:{
         type:DataTypes.STRING
     },
     image:{
@@ -65,10 +65,12 @@ const merchant = sequelize.define("merchant",
         type:DataTypes.DATE
     },
     is_expired:{
+        defaultValue:0,
         type:DataTypes.BOOLEAN
     },
     trial_period:{
-        type:DataTypes.BOOLEAN
+        defaultValue:"yes",
+        type:DataTypes.STRING
     },
     device_token:{
         type:DataTypes.STRING
@@ -84,4 +86,3 @@ const merchant = sequelize.define("merchant",
 
 merchant.sync({alter : true})
 module.exports = merchant
-
