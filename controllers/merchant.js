@@ -103,15 +103,12 @@ const register = async (req, res,next) => {
     const imageUrl = baseUrl + fileName;
     const expire=new Date()
     expire.setDate(expire.getDate()+10);
-    // const newexpire=expire.toISOString().substring(0,10)
-    // console.log(newexpire)
     const newData = { 
       ...data, 
       password: hash, 
       image: imageUrl,
       expiry:expire
     };
-
     //creating new merchant
     const newMerchant = await merchant.create(newData);
     //generating authtoken using merchant id
@@ -160,15 +157,16 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
     var userMerchant = await merchant.findOne({ where: { email: email } });
     if (!userMerchant) {
-        const newMember =await member.findOne({include:{
+        var newMember =await member.findOne({where:{email:email}})
+        newMember=await member.findOne({include:{
           model:merchant,
           attributes:[
           'business_name',
-          'business_address1',
-          'business_address2',
+          'business_address_1',
+          'business_address_2',
           'country',
           'currency',
-          'currencyvalue',
+          'currency_value',
           'image',
           'latitude',
           'longitude',
@@ -183,11 +181,35 @@ const login = async (req, res, next) => {
           'mobile',
           'package'
           ]
-        }},{where:{email:email}})
+        },where:{merchant_id:newMember.merchant_id}})
         if(!newMember) throw next(createError(200,"false","No User found"))
-        const{merchant:{dataValues}, ...newMerchant}=newMember;
-        userMerchant= {...newMerchant, ...dataValues}
-        console.log(userMerchant.dataValues)
+          userMerchant = {
+            merchant_id: newMember.merchant_id,
+            password: newMember.password,
+            email: newMember.email,
+            business_name: newMember.merchant.business_name,
+            business_address_1: newMember.merchant.business_address_1,
+            business_address_2: newMember.merchant.business_address_2,
+            country: newMember.merchant.country,
+            currency: newMember.merchant.currency,
+            currency_value: newMember.merchant.currency_value,
+            package: newMember.merchant.package,
+            image: newMember.merchant.image,
+            latitude: newMember.merchant.latitude,
+            longitude: newMember.merchant.longitude,
+            referal_code: newMember.merchant.referal_code,
+            type: newMember.merchant.type,
+            parent_id: newMember.merchant.parent_id||"",
+            subscription: newMember.merchant.subscription||"",
+            expiry: newMember.merchant.expiry,
+            is_expired: newMember.merchant.is_expired,
+            trial_period: newMember.merchant.trial_period,
+            device_token: newMember.merchant.device_token,
+            mobile: newMember.merchant.mobile,
+            createdAt: newMember.createdAt,
+            updatedAt: newMember.updatedAt
+          };
+          console.log(userMerchant)
       }
     const isCorrect = await bcrypt.compare(password, userMerchant.password);
     if (!isCorrect) throw next(createError(401,"false","Invalid Credentials"))
@@ -196,8 +218,9 @@ const login = async (req, res, next) => {
       process.env.JWT_SECERETE,
       { expiresIn: "24h" }
     );
+    console.log(userMerchant.merchant_id)
     const presentDate=new Date();
-    if(presentDate>userMerchant.dataValues.expiry)
+    if(presentDate>userMerchant.expiry)
       {
         await merchant.update({
           is_expired:1,
@@ -206,8 +229,7 @@ const login = async (req, res, next) => {
           merchant_id:userMerchant.merchant_id
         }})
     }
-    userMerchant=await merchant.findOne({ where: { email: email } });
-    console.log(userMerchant.dataValues)
+    // userMerchant=await merchant.findOne({ where: { email: email } });
     res.status(200).json({
       status:"OK",
       code:200,

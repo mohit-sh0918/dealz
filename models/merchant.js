@@ -76,7 +76,7 @@ const merchant = sequelize.define("merchant",
         type:DataTypes.STRING
     },
     mobile:{
-        type:DataTypes.INTEGER
+        type:DataTypes.BIGINT
     }
 
 },

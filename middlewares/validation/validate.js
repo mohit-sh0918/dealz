@@ -89,6 +89,7 @@ const verifyToken=async(req,res,next)=>{
         let token=req.body.token
         if (!token) throw next(createError(401,"error","Invalid Token"))
         const verifyToken=jwt.decode(token)
+        if (!verifyToken) throw next(createError(401,"error","Invalid Token"))
         const expiryTime=verifyToken.exp*1000;
         if(Date.now()>expiryTime)throw next(createError(401,"error","Token expired"))
         const id=jwt.verify(token,process.env.JWT_SECERETE )
