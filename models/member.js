@@ -26,6 +26,10 @@ const member=sequelize.define("member",{
     },
     password:{
         type:DataTypes.STRING,
+    },
+    type:{
+        defaultValue:"member",
+        type:DataTypes.STRING,
     }
 },{
     freezeTableName:true
@@ -33,5 +37,5 @@ const member=sequelize.define("member",{
 
 member.belongsTo(merchant,{foreignKey:"merchant_id",onDelete:"CASCADE",onUpdate:"CASCADE"});
 merchant.hasMany(member,{foreignKey:"merchant_id",onDelete:"CASCADE",onUpdate:"CASCADE"});
-member.sync({alter:false})
+member.sync({alter:true})
 module.exports=member;

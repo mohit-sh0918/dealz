@@ -7,14 +7,14 @@ const path = require("path");
 const { where } = require("sequelize");
 const internal = require("stream");
 const baseUrl = "https://outgoing-crab-notably.ngrok-free.app/";
-const mail=require("../helper/mailer");
+const mail = require("../helper/mailer");
 const OTP = require("../models/otp");
-const crypto = require("crypto");
+const crypto = require("node:crypto");
 const { throws } = require("assert");
-const countryCode=require("../config/csvjson.json");
+const countryCode = require("../config/csvjson.json");
 const createError = require("../helper/error");
-const Category=require("../models/category")
-const Deal=require("../models/deals");
+const Category = require("../models/category");
+const Deal = require("../models/deals");
 const member = require("../models/member");
 const deal = require("../models/deals");
 const category = require("../models/category");
@@ -22,18 +22,18 @@ const { trial_period } = require("../helper/schedule");
 
 //utility functions
 function generateOTP() {
-  var digits = '0123456789';
-  let OTP = '';
+  var digits = "0123456789";
+  let OTP = "";
   for (let i = 0; i < 4; i++) {
-      OTP += digits[Math.floor(Math.random() * 10)];
+    OTP += digits[Math.floor(Math.random() * 10)];
   }
   return OTP;
-};
+}
 function jsToEpoch(date) {
   const currentDate = new Date(date);
   const epochTime = currentDate.getTime();
   return epochTime;
-};
+}
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "./images");
@@ -65,35 +65,55 @@ const uploadImg = multer({
     }
   },
 });
-const getCountryCode=async(req,res,next)=>{
+const getCountryCode = async (req, res, next) => {
   try {
-      const data=[];
-      for(i in countryCode)
-          data.push({
-              "country_id": countryCode[i].ID, 
-              "code": countryCode[i].CountryCode, 
-              "name": countryCode[i].ValueEn,
-              "currency": countryCode[i].CurrencyCode })
-      return res.status(200).json({
-          status:"OK",
-          code:200,
-          message:"",
-          data:data
-      })
-  }catch(err){
-      next(err)
+    const data = [];
+    for (i in countryCode)
+      data.push({
+        country_id: countryCode[i].ID,
+        code: countryCode[i].CountryCode,
+        name: countryCode[i].ValueEn,
+        currency: countryCode[i].CurrencyCode,
+      });
+    return res.status(200).json({
+      status: "OK",
+      code: 200,
+      message: "",
+      data: data,
+    });
+  } catch (err) {
+    next(err);
   }
 };
+function encrypt(text) {
+  let algorithm = process.env.ALGORITHM; 
+  let key = process.env.KEY; 
+  let iv = process.env.IV;
+  let cipher = crypto.createCipheriv(algorithm, key, iv);  
+  let encrypted = cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+  return encrypted;
+  }
+function decrypt(text) {
+  let algorithm = process.env.ALGORITHM; 
+  let key = process.env.KEY; 
+  let iv = process.env.IV;
+  let decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = decipher.update(text, 'hex', 'utf8') + decipher.final('utf8');
+  
+  return decrypted;
+}
+
 
 //registering Merchants
-const register = async (req, res,next) => {
+const register = async (req, res, next) => {
   //check if merchant exists
   try {
     const data = req.body;
     const merchantExists = await merchant.findOne({
       where: { email: data.email },
     });
-    if (merchantExists) throw next(createError(400,"error","Merchant already exists"))
+    if (merchantExists)
+      throw next(createError(200, "error", "Merchant already exists",400));
     //bcrypting the password
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(data.password, salt);
@@ -101,13 +121,13 @@ const register = async (req, res,next) => {
     //creating image url and creating merchant
     const fileName = req.file.filename;
     const imageUrl = baseUrl + fileName;
-    const expire=new Date()
-    expire.setDate(expire.getDate()+10);
-    const newData = { 
-      ...data, 
-      password: hash, 
+    const expire = new Date();
+    expire.setDate(expire.getDate() + 10);
+    const newData = {
+      ...data,
+      password: hash,
       image: imageUrl,
-      expiry:expire
+      expiry: expire,
     };
     //creating new merchant
     const newMerchant = await merchant.create(newData);
@@ -116,11 +136,11 @@ const register = async (req, res,next) => {
       { id: newMerchant.merchant_id },
       process.env.JWT_SECERETE,
       { expiresIn: "24h" }
-    ); 
+    );
     //sending response
     return res.status(201).json({
       status: "OK",
-      code:200,
+      code: 200,
       message: "Merchant created successfully",
       data: {
         merchant_id: newMerchant.merchant_id,
@@ -147,94 +167,113 @@ const register = async (req, res,next) => {
       },
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 
 //login Merchant
 const login = async (req, res, next) => {
-  try { 
+  try {
     const { email, password } = req.body;
-    var userMerchant = await merchant.findOne({ where: { email: email } });
+    var isCorrect;
+    let userMerchant = await merchant.findOne({ where: { email: email },include:{
+      model:member,
+    }});
+    userMerchant.member.forEach(element => {
+      if(element.email===email)
+        console.log(element)
+    });
+    console.log(userMerchant.dataValues)
+    //for memeber login with merchent details
     if (!userMerchant) {
-        var newMember =await member.findOne({where:{email:email}})
-        newMember=await member.findOne({include:{
-          model:merchant,
-          attributes:[
-          'business_name',
-          'business_address_1',
-          'business_address_2',
-          'country',
-          'currency',
-          'currency_value',
-          'image',
-          'latitude',
-          'longitude',
-          'referal_code',
-          'type',
-          'parent_id',
-          'subscription',
-          'expiry',
-          'is_expired',
-          'trial_period',
-          'device_token',
-          'mobile',
-          'package'
-          ]
-        },where:{merchant_id:newMember.merchant_id}})
-        if(!newMember) throw next(createError(200,"false","No User found"))
-          userMerchant = {
-            merchant_id: newMember.merchant_id,
-            password: newMember.password,
-            email: newMember.email,
-            business_name: newMember.merchant.business_name,
-            business_address_1: newMember.merchant.business_address_1,
-            business_address_2: newMember.merchant.business_address_2,
-            country: newMember.merchant.country,
-            currency: newMember.merchant.currency,
-            currency_value: newMember.merchant.currency_value,
-            package: newMember.merchant.package,
-            image: newMember.merchant.image,
-            latitude: newMember.merchant.latitude,
-            longitude: newMember.merchant.longitude,
-            referal_code: newMember.merchant.referal_code,
-            type: newMember.merchant.type,
-            parent_id: newMember.merchant.parent_id||"",
-            subscription: newMember.merchant.subscription||"",
-            expiry: newMember.merchant.expiry,
-            is_expired: newMember.merchant.is_expired,
-            trial_period: newMember.merchant.trial_period,
-            device_token: newMember.merchant.device_token,
-            mobile: newMember.merchant.mobile,
-            createdAt: newMember.createdAt,
-            updatedAt: newMember.updatedAt
-          };
-          console.log(userMerchant)
-      }
-    const isCorrect = await bcrypt.compare(password, userMerchant.password);
-    if (!isCorrect) throw next(createError(401,"false","Invalid Credentials"))
+      const newMember = await member.findOne({
+        where: { email: email },
+        include: {
+          model: merchant,
+          attributes: [
+            "business_name",
+            "business_address_1",
+            "business_address_2",
+            "country",
+            "currency",
+            "currency_value",
+            "image",
+            "latitude",
+            "longitude",
+            "referal_code",
+            "parent_id",
+            "subscription",
+            "expiry",
+            "is_expired",
+            "trial_period",
+            "device_token",
+            "mobile",
+            "package",
+          ],
+        },
+      });
+      if (!newMember) throw next(createError(200, "false", "No User found"));
+      userMerchant = {
+        merchant_id: newMember.merchant_id,
+        password: newMember.password,
+        email: newMember.email,
+        business_name: newMember.merchant.business_name,
+        business_address_1: newMember.merchant.business_address_1,
+        business_address_2: newMember.merchant.business_address_2,
+        country: newMember.merchant.country,
+        currency: newMember.merchant.currency,
+        currency_value: newMember.merchant.currency_value,
+        package: newMember.merchant.package,
+        image: newMember.merchant.image,
+        latitude: newMember.merchant.latitude,
+        longitude: newMember.merchant.longitude,
+        referal_code: newMember.merchant.referal_code,
+        type: newMember.type,
+        parent_id: newMember.merchant.parent_id || "",
+        subscription: newMember.merchant.subscription || "",
+        expiry: newMember.merchant.expiry,
+        is_expired: newMember.merchant.is_expired,
+        trial_period: newMember.merchant.trial_period,
+        device_token: newMember.merchant.device_token,
+        mobile: newMember.merchant.mobile,
+        createdAt: newMember.createdAt,
+        updatedAt: newMember.updatedAt,
+      };
+      isCorrect=decrypt(userMerchant.password)
+        if(!isCorrect)
+        throw next(createError(200, "false", "Invalid Credentials",401));
+    }
+    isCorrect = await bcrypt.compare(password, userMerchant.password);
+    if(!isCorrect)
+      throw next(createError(200, "false", "Invalid Credentials",401));
+
     const auth_token = jwt.sign(
       { id: userMerchant.merchant_id },
       process.env.JWT_SECERETE,
       { expiresIn: "24h" }
     );
-    console.log(userMerchant.merchant_id)
-    const presentDate=new Date();
-    if(presentDate>userMerchant.expiry)
-      {
-        await merchant.update({
-          is_expired:1,
-          trial_period:0,
-        },{where:{
-          merchant_id:userMerchant.merchant_id
-        }})
+    const presentDate = new Date();
+    if (presentDate > userMerchant.expiry) {
+      await merchant.update(
+        {
+          is_expired: 1,
+          trial_period: 0,
+        },
+        {
+          where: {
+            merchant_id: userMerchant.merchant_id,
+          },
+        }
+      );
     }
     // userMerchant=await merchant.findOne({ where: { email: email } });
+    const code=( userMerchant.is_expired==0?200:1052);
+    const stat=(userMerchant.is_expired==0?"OK":"false")
     res.status(200).json({
-      status:"OK",
-      code:200,
+      status:stat,
+      code: code,
       message: "Merchant logged In successfully",
-      data: { 
+      data: {
         merchant_id: userMerchant.merchant_id,
         email: userMerchant.email,
         contact: userMerchant.mobile,
@@ -254,27 +293,30 @@ const login = async (req, res, next) => {
         parent_id: userMerchant.parent_id || "",
         subscription: userMerchant.subscription || "",
         expiry: userMerchant.expiry || "",
-        is_expired: userMerchant.is_expired ,
-        trial_period: userMerchant.trial_period ,
+        is_expired: userMerchant.is_expired,
+        trial_period: userMerchant.trial_period,
       },
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 
 //get profile of merchant
-const merchantProfile = async (req, res,next) => {
+const merchantProfile = async (req, res, next) => {
   try {
-    const id = req.id
+    const id = req.id;
 
     const userMerchant = await merchant.findOne({
       where: { merchant_id: id },
     });
-    if (!userMerchant) throw next(createError(404,"error","Merchant not found"))
+    if (!userMerchant)
+      throw next(createError(404, "error", "Merchant not found"));
+    const code=( userMerchant.is_expired==0?200:1052);
+    const stat=(userMerchant.is_expired==0?"OK":"false")
     return res.status(200).json({
-      status: "OK",
-      code:200,
+      status: stat,
+      code: code,
       message: "Merchant profile",
       data: {
         merchant_id: userMerchant.merchant_id,
@@ -301,50 +343,50 @@ const merchantProfile = async (req, res,next) => {
       },
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 
 //change merchant password
-const changePassword = async (req,res,next) => {
+const changePassword = async (req, res, next) => {
   try {
-    const { old_password, new_password } = req.body;
-    const id=req.id
+    const {current_password, new_password} = req.body;
+    const id = req.id;
     const userMerchant = await merchant.findOne({
       where: { merchant_id: id },
     });
-    const isCorrect = await bcrypt.compare(old_password, userMerchant.password);
-    if (!isCorrect) throw next(createError(400,"error","Invalid Password"))
+    const isCorrect = await bcrypt.compare(current_password, userMerchant.password);
+    if (!isCorrect) throw next(createError(200, "error", "Invalid Password"));
     const salt = await bcrypt.genSalt(10);
     const hash = bcrypt.hashSync(new_password, salt);
     await merchant
-      .update({ password: hash }, { where: { merchant_id: id} })
+      .update({ password: hash }, { where: { merchant_id: id } })
       .then((result) => {
         res.status(200).json({
           status: "OK",
-          code:200,
+          code: 200,
           message: "Password changed successfully",
         });
       });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 //edit merchant profile
-const editMercantProfile=async(req,res,next)=>{
+const editMercantProfile = async (req, res, next) => {
   try {
-    const data=req.body;
-    const id=req.id
+    const data = req.body;
+    const id = req.id;
     const fileName = req.file.filename;
     const imageUrl = baseUrl + fileName;
-    const newdata={...data,image:imageUrl}
-    await merchant.update(newdata,{where:{merchant_id:id}})
-    const userMerchant=await merchant.findOne({where:{merchant_id:id}})
+    const newdata = { ...data, image: imageUrl };
+    await merchant.update(newdata, { where: { merchant_id: id } });
+    const userMerchant = await merchant.findOne({ where: { merchant_id: id } });
     res.status(200).json({
       status: "OK",
-      code:200,
+      code: 200,
       message: "Profile updated successfully",
-      data:{
+      data: {
         merchant_id: userMerchant.merchant_id,
         email: userMerchant.email,
         contact: userMerchant.mobile,
@@ -366,265 +408,279 @@ const editMercantProfile=async(req,res,next)=>{
         expiry: userMerchant.expiry || "",
         is_expired: userMerchant.is_expired || "",
         trial_period: userMerchant.trial_period || "",
-      }
+      },
     });
-    
-  } catch (err) { 
-    next(err)
-  }
-};
-//forget password
-const forgetPassword=async(req,res,next)=>{
-  try{
-    const email=req.body.email;
-    if(!email)throw next(createError(404,"error","Invalid Credentials"))
-    const merchant_id=await merchant.findOne({
-      attributes:[
-        'merchant_id'
-      ],
-      where:{
-        email:email
-      }
-    })
-    if(!merchant_id)throw next(createError(404,"error","Invalid Credentials"));
-    const otp=generateOTP()
-    const date1 = new Date();
-    const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
-    const token=crypto.randomBytes(20).toString("hex")
-    
-    var data={
-      otp:otp,
-      expire_time:finalDate,
-      merchant_id:merchant_id.merchant_id,
-      token:token,
-    }
-    OTP.create(data)
-    .then((result=>{
-      mail.mailSender(email,'Reset Password',`OTP for resetting the Password is ${otp}`)
-      .then((data)=>{
-        return res.status(200).json({
-          status:"OK",
-          code:200,
-          message:"OTP sent to your email",
-          data:data
-        })
-      })
-    }))
-  }catch(err){
-    next(err)
-  }
-};
-
-//add deals 
-const addDeal=async(req,res,next)=>{
-  try {
-      const token_id =req.id;
-      const fileName = req.file.filename;
-      const imageUrl = baseUrl + fileName;
-      const deal=req.body;
-      const newDeal={
-        ...deal,
-        merchant_id:token_id,
-        category_id:deal.category,
-        image:imageUrl,
-      }
-      await Deal.create(newDeal)
-      .then((result)=>{
-        res.status(200).json({
-          status:"OK",
-          code:200,
-          message:"Deal added successfully",
-        })
-      })
   } catch (err) {
-      next(err)
+    next(err);
+  }
+};
+  //forget password
+  const forgetPassword = async (req, res, next) => {
+    try {
+      const email = req.body.email;
+      if (!email) throw next(createError(404, "error", "Invalid Credentials"));
+      const merchant_id = await merchant.findOne({
+        attributes: ["merchant_id"],
+        where: {
+          email: email,
+        },
+      });
+      if (!merchant_id)
+        throw next(createError(404, "error", "Invalid Credentials"));
+      const otp = generateOTP();
+      const date1 = new Date();
+      const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
+      const token = crypto.randomBytes(20).toString("hex");
+
+      var data = {
+        otp: otp,
+        expire_time: finalDate,
+        merchant_id: merchant_id.merchant_id,
+        token: token,
+      };
+      OTP.create(data).then((result) => {
+        mail
+          .mailSender(
+            email,
+            "Reset Password",
+            `OTP for resetting the Password is ${otp}`
+          )
+          .then((data) => {
+            return res.status(200).json({
+              status: "OK",
+              code: 200,
+              message: "OTP sent to your email",
+              data: data,
+            });
+          });
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+//add deals
+const addDeal = async (req, res, next) => {
+  try {
+    const token_id = req.id;
+    const fileName = req.file.filename;
+    const imageUrl = baseUrl + fileName;
+    const deal = req.body;
+    const newDeal = {
+      ...deal,
+      merchant_id: token_id,
+      category_id: deal.category,
+      image: imageUrl,
+    };
+    Deal.create(newDeal).then((result) => {
+      console.log(result)
+      res.status(200).json({
+        status: "OK",
+        code: 200,
+        message: "Deal added successfully",
+      });
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
 //edit deals
-const editDeal=async(req,res,next)=>{
+const editDeal = async (req, res, next) => {
   try {
-      // const isDeal_id=await Deal.findOne({where:{deal_id:req.body.deal_id}})
-      // if(!isDeal_id)throw next(createError(400,"invalid deal id"))
-      const token_id =req.id
+    // const isDeal_id=await Deal.findOne({where:{deal_id:req.body.deal_id}})
+    // if(!isDeal_id)throw next(createError(400,"invalid deal id"))
+    const token_id = req.id;
+    let imageUrl;
+    if(req.file!=null)
+    {
       const fileName = req.file.filename;
-      const imageUrl = baseUrl + fileName;
-      const deal=req.body;
-      const newDeal={
-        ...deal,
-        merchant_id:token_id,
-        category_id:deal.category,
-        image:imageUrl,
-      }
-      await Deal.update(newDeal,{where:{deal_id:req.body.deal_id}})
-      .then((result)=>{
+      imageUrl = baseUrl + fileName;
+    }else{
+      imageUrl=await deal.findOne({where:{deal_id:req.body.deal_id},attributes:['image']})
+      imageUrl=imageUrl.image
+    }
+    const deals = req.body;
+    const newDeal = {
+      ...deals,
+      merchant_id: token_id,
+      category_id: deals.category,
+      image:imageUrl
+    };
+    await Deal.update(newDeal, { where: { deal_id: req.body.deal_id } }).then(
+      (result) => {
         res.status(200).json({
-          status:"OK",
-          code:200,
-          message:"Deal updated successfully",
-        })
-      })
+          status: "OK",
+          code: 200,
+          message: "Deal updated successfully",
+        });
+      }
+    );
   } catch (err) {
-      next(err)
+    next(err);
   }
 };
 //delete deal
-const deleteDeal=async(req,res,next)=>{
+const deleteDeal = async (req, res, next) => {
   try {
     // const auth=await Deal.findOne({where:{user_id:token_id.id}})
     // if(!auth)throw next(createError(404,"Unauthroised access"))
-    const verifyDeal=await Deal.findOne({where:{deal_id:req.body.deal_id}})
-      if(!verifyDeal) throw next(createError(404,false,"Deal does not exist"))
-    await Deal.destroy({where:{deal_id:req.body.deal_id}})
-    .then((result)=>{
-      res.status(200).json({
-        status:"OK",
-        code:200,
-        message:"Deal deleted successfully",
-    })
-  })
+    const verifyDeal = await Deal.findOne({
+      where: { deal_id: req.body.deal_id },
+    });
+    if (!verifyDeal) throw next(createError(404, false, "Deal does not exist"));
+    await Deal.destroy({ where: { deal_id: req.body.deal_id } }).then(
+      (result) => {
+        res.status(200).json({
+          status: "OK",
+          code: 200,
+          message: "Deal deleted successfully",
+        });
+      }
+    );
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 //get category
-const getCategory=async(req,res,next)=>{
+const getCategory = async (req, res, next) => {
   try {
-    const category=await Category.findAll()
+    const category = await Category.findAll();
     res.status(200).json({
-      status:"OK",
-      code:200,
-      message:"All the Category",
-      data:{
-        category:category
-      }
-    })
+      status: "OK",
+      code: 200,
+      message: "All the Category",
+      data: {
+        category: category,
+      },
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 //add memeber
-const addMember=async(req,res,next)=>{
+const addMember = async (req, res, next) => {
   try {
     //check if memeber is a merchant
-    const membr=await member.findOne({where:{email:req.body.email}})
-    if(membr) throw next(createError(400,"false","Member already exist"))
-    const pass=bcrypt.hashSync(req.body.password,bcrypt.genSaltSync(10))
-    const data={...req.body, merchant_id:req.id,password:pass}
-    const newMember=await member.create(data)
-    .then((result)=>{
+    const membr = await member.findOne({ where: { email: req.body.email } });
+    if (membr) throw next(createError(400, "false", "Member already exist"));
+    const pass = encrypt(req.body.password)
+    const data = { ...req.body, merchant_id: req.id, password: pass };
+    await member.create(data).then((result) => {
       res.status(200).json({
-        status:"OK",
-        code:200,
-        message:"Member added successfully",
-      })
-    })
+        status: "OK",
+        code: 200,
+        message: "Member added successfully",
+      });
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 //edit member
-const editMember=async(req,res,next)=>{
+const editMember = async (req, res, next) => {
   try {
-    const data=req.body;
-    const member_id=await member.findOne({where:{id:data.member_id}})
-    console.log(member_id)
-    if(!member_id)
-      throw next(createError(400,"error","Invalid Credentials"))
-    if(req.id!=member_id.merchant_id)
-      throw next(createError(404,"error","Unauthorised Access"))
-    const pass=bcrypt.hashSync(data.password,bcrypt.genSaltSync(10))
-    const newData={...data,password:pass}
-    const newMember=await member.update(newData,{where:{id:data.member_id}})
-    .then((newMember)=>{
-      res.status(200).json({
-        status:"OK",
-        code:200,
-        message:"Member updated successfully",
-      })
-    })
-  }catch(err){
-    next(err)
+    const data = req.body;
+    const member_id = await member.findOne({ where: { id: data.member_id } });
+    console.log(member_id);
+    if (!member_id)
+      throw next(createError(400, "error", "Invalid Credentials"));
+    if (req.id != member_id.merchant_id)
+      throw next(createError(404, "error", "Unauthorised Access"));
+    const pass = bcrypt.hashSync(data.password, bcrypt.genSaltSync(10));
+    const newData = { ...data, password: pass };
+    const newMember = await member
+      .update(newData, { where: { id: data.member_id } })
+      .then((newMember) => {
+        res.status(200).json({
+          status: "OK",
+          code: 200,
+          message: "Member updated successfully",
+        });
+      });
+  } catch (err) {
+    next(err);
   }
 };
 //delete member
-const deleteMember=async(req,res,next)=>{
-  try{
-    const data=req.body;
-    const findMember=await member.findOne({where:{id:data.member_id}})
-    if(!findMember)throw next(createError(400,false,"Invalid Member"))
-    if(req.id!=findMember.merchant_id)throw next(createError(404,false,"Unauthorised Access"))
-    await member.destroy({where:{id:data.member_id}})
-  .then((result)=>{
-    res.status(200).json({
-      status:"OK",
-      code:200,
-      message:"Member deleted successfully"
-    })
-  })
-  }catch(err){
-    next(err)
+const deleteMember = async (req, res, next) => {
+  try {
+    const data = req.body;
+    const findMember = await member.findOne({ where: { id: data.member_id } });
+    if (!findMember) throw next(createError(400, false, "Invalid Member"));
+    if (req.id != findMember.merchant_id)
+      throw next(createError(404, false, "Unauthorised Access"));
+    await member.destroy({ where: { id: data.member_id } }).then((result) => {
+      res.status(200).json({
+        status: "OK",
+        code: 200,
+        message: "Member deleted successfully",
+      });
+    });
+  } catch (err) {
+    next(err);
   }
 };
 //get all members
-const getAllMember=async(req,res,next)=>{
+const getAllMember = async (req, res, next) => {
   try {
-    const findMember=await member.findAll({where:{merchant_id:req.id}})
-    if(!findMember)throw next(createError(400,"error","No Member Found"))
-      const data=[]=findMember.map(findMember=>({
-        parent_id:findMember.id,
-        name:findMember.name,
-        email:findMember.email,
-        merchant_id:findMember.merchant_id,
-        password:findMember.password
-      }))
+    const findMember = await member.findAll({ where: { merchant_id: req.id } });
+    if (!findMember) throw next(createError(400, "error", "No Member Found"));
+    const data = ([] = findMember.map((findMember) => ({
+      parent_id: findMember.id,
+      name: findMember.name,
+      email: findMember.email,
+      merchant_id: findMember.merchant_id,
+      password:decrypt(findMember.password),
+    })));
     res.status(200).json({
-      status:"OK",
-      code:200,
-      message:"Members Found",
-      data:data
-    })
+      status: "OK",
+      code: 200,
+      message: "Members Found",
+      data: data,
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
 };
 //get all deals
-const getAllDeals=async(req,res,next)=>{
+const getAllDeals = async (req, res, next) => {
   try {
     const data = await deal.findAll({
-      where:{
-        merchant_id:req.id
+      where: {
+        merchant_id: req.id,
       },
-      include:{
-        model:category,
-        attributes:['name'],
-        required:true
-    }})
-    const newData=data.map(values=>({
-      "deal_id":values.deal_id, 
-      "merchant_id": values.merchant_id, 
-      "category_id": values.category_id, 
-      "deal_type": values.type, 
-      "description1": values.description1, 
-      "description2": values.description2, 
-      "description3": values.description3, 
-      "from_time": values.time_from,
-      "to_time": values.time_to, 
-      "from_date": values.date_from, 
-      "to_date": values.date_to, 
-      "normal_price": values.normal_price, 
-      "offer_price": values.offer_price, 
-      "image": values.image, 
-      "category_name": values.category.dataValues.name
-    }))
+      include: {
+        model: category,
+        attributes: ["name"],
+        required: true,
+      },
+    });
+    const newData = data.map((values) => ({
+      deal_id: values.deal_id,
+      merchant_id: values.merchant_id,
+      category_id: values.category_id,
+      deal_type: values.type,
+      description1: values.description1,
+      description2: values.description2,
+      description3: values.description3,
+      from_time: values.time_from,
+      to_time: values.time_to,
+      from_date: values.date_from,
+      to_date: values.date_to,
+      normal_price: values.normal_price,
+      offer_price: values.offer_price,
+      image: values.image,
+      category_name: values.category.dataValues.name,
+    }));
     res.status(200).json({
-      status:"OK",
-      code:200,
-      message:"All Deals",
-      data:newData
-    })
-  }catch(err){
-    next(err)
+      status: "OK",
+      code: 200,
+      message: "All Deals",
+      data: newData,
+    });
+  } catch (err) {
+    next(err);
   }
 };
 module.exports = {
@@ -644,5 +700,5 @@ module.exports = {
   editMember,
   deleteMember,
   getAllMember,
-  getAllDeals
-}; 
+  getAllDeals,
+};

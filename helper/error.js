@@ -1,5 +1,5 @@
 const createError=(status,jStatus,message,code)=>{
-    //status is the response.stattus, jStatus is Json Body Status, 
+    //status is the response.status, jStatus is Json Body Status, 
     // message is Json Body Message code is json Body code
     const err=new Error;
     err.status=status;
