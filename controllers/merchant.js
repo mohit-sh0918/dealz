@@ -175,15 +175,7 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    var isCorrect;
-    let userMerchant = await merchant.findOne({ where: { email: email },include:{
-      model:member,
-    }});
-    userMerchant.member.forEach(element => {
-      if(element.email===email)
-        console.log(element)
-    });
-    console.log(userMerchant.dataValues)
+    let userMerchant = await merchant.findOne({ where: { email: email } });
     //for memeber login with merchent details
     if (!userMerchant) {
       const newMember = await member.findOne({
@@ -243,10 +235,13 @@ const login = async (req, res, next) => {
         if(!isCorrect)
         throw next(createError(200, "false", "Invalid Credentials",401));
     }
-    isCorrect = await bcrypt.compare(password, userMerchant.password);
-    if(!isCorrect)
-      throw next(createError(200, "false", "Invalid Credentials",401));
-
+    var isCorrect = await bcrypt.compare(password, userMerchant.password);
+    if (!isCorrect)
+      {
+        isCorrect=decrypt(userMerchant.password)
+        if(!isCorrect)
+        throw next(createError(401, "false", "Invalid Credentials"));
+      }
     const auth_token = jwt.sign(
       { id: userMerchant.merchant_id },
       process.env.JWT_SECERETE,
