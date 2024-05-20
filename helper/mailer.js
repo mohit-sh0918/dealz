@@ -15,9 +15,9 @@ const mailSender=async(email,title,body)=>{
 
         let info= await transporter.sendMail({
             from:'cisbackend@gmail.com',
-            to:`mohit.sh@cisinlabs.com`,
+            to:email,
             subject:title,
-            text:`${body}`
+            html:`${body}`
         })
         return info;
     }catch(err){

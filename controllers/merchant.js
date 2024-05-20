@@ -102,6 +102,23 @@ function decrypt(text) {
   
   return decrypted;
 }
+const verifyToken=async(req,res,next)=>{
+  try
+  {   
+      let token=req.body.token
+      if (!token) throw next(createError(401,"ERROR","Invalid Token"))
+      jwt.verify(token, process.env.JWT_SECERETE, (err, user) => {
+        if (err) throw next(createError(200, "ERROR", "Invalid token", 401));
+        const verifyId = merchant.findOne({ where: { merchant_id: user.id } });
+        if (!verifyId)
+          throw next(createError(200, "ERROR", "Invalid User", 401));
+        req.id = user.id;
+      });
+          next()
+}catch(err){
+  next(err)
+}
+}
 
 
 //registering Merchants
@@ -137,6 +154,23 @@ const register = async (req, res, next) => {
       process.env.JWT_SECERETE,
       { expiresIn: "24h" }
     );
+    //sending email
+    const paymentLink="https://www.google.com/"
+    const emailBody = `
+        <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+            <h2>Welcome to the Merchant Portal</h2>
+            <p>Dear Merchant,</p>
+            <p>Thank you for joining our platform. To get started, please complete your payment by clicking the button below:</p>
+            <a href="${paymentLink}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #ffffff; background-color: #007bff; text-decoration: none; border-radius: 5px;">Pay Now</a>
+            <p>If you have any questions, feel free to contact our support team.</p>
+            <p>Best regards,<br>The Merchant Portal Team</p>
+        </div>
+    `;
+    await mail.mailSender(
+      newMerchant.email,
+      "Welcome to the Merchant Portal",
+      emailBody
+    )
     //sending response
     return res.status(201).json({
       status: "OK",
@@ -468,7 +502,6 @@ const addDeal = async (req, res, next) => {
       image: imageUrl,
     };
     Deal.create(newDeal).then((result) => {
-      console.log(result)
       res.status(200).json({
         status: "OK",
         code: 200,
@@ -696,4 +729,5 @@ module.exports = {
   deleteMember,
   getAllMember,
   getAllDeals,
+  verifyToken
 };

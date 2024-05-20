@@ -83,24 +83,7 @@ const loginNewUser= async(req,res,next)=>{
 }
 
 //verify token
-const verifyToken=async(req,res,next)=>{
-    try
-    {   
-        let token=req.body.token
-        if (!token) throw next(createError(401,"ERROR","Invalid Token"))
-        const verifyToken=jwt.decode(token)
-        if (!verifyToken) throw next(createError(401,"ERROR","Invalid Token"))
-        const expiryTime=verifyToken.exp*1000;
-        if(Date.now()>expiryTime)throw next(createError(200,"ERROR","Token expired",401))
-        const id=jwt.verify(token,process.env.JWT_SECERETE )
-        const verifyId=await merchant.findOne({where:{merchant_id:id.id}})
-        if(!verifyId)throw new Error("Invalid token")
-        req.id=id.id
-            next()
-}catch(err){
-    next(err)
-}
-}
+
 
 //verify addDeal
 const addDeal = async (req, res, next) => {
@@ -166,7 +149,6 @@ const editDeal = async (req, res, next) => {
 module.exports={
     addNewUser,
     loginNewUser,
-    verifyToken,
     addDeal,
     editDeal,
     editUser
