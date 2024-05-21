@@ -18,7 +18,7 @@ const Deal = require("../models/deals");
 const member = require("../models/member");
 const deal = require("../models/deals");
 const category = require("../models/category");
-const { trial_period } = require("../helper/schedule");
+const { Op } = require('sequelize');
 
 //utility functions
 function generateOTP() {
@@ -94,13 +94,17 @@ function encrypt(text) {
   return encrypted;
   }
 function decrypt(text) {
-  let algorithm = process.env.ALGORITHM; 
+  try {
+    let algorithm = process.env.ALGORITHM; 
   let key = process.env.KEY; 
   let iv = process.env.IV;
   let decipher = crypto.createDecipheriv(algorithm, key, iv);
   let decrypted = decipher.update(text, 'hex', 'utf8') + decipher.final('utf8');
   
   return decrypted;
+  } catch (error) {
+    createError(200,"false","Invalid Credentials",401)
+  }
 }
 const verifyToken=async(req,res,next)=>{
   try
@@ -108,7 +112,7 @@ const verifyToken=async(req,res,next)=>{
       let token=req.body.token
       if (!token) throw next(createError(401,"ERROR","Invalid Token"))
       jwt.verify(token, process.env.JWT_SECERETE, (err, user) => {
-        if (err) throw next(createError(200, "ERROR", "Invalid token", 401));
+        if (err) throw next(createError(200, "ERROR", "Token Expired", 401));
         const verifyId = merchant.findOne({ where: { merchant_id: user.id } });
         if (!verifyId)
           throw next(createError(200, "ERROR", "Invalid User", 401));
@@ -166,7 +170,7 @@ const register = async (req, res, next) => {
             <p>Best regards,<br>The Merchant Portal Team</p>
         </div>
     `;
-    await mail.mailSender(
+    mail.mailSender(
       newMerchant.email,
       "Welcome to the Merchant Portal",
       emailBody
@@ -212,13 +216,8 @@ const login = async (req, res, next) => {
 
     let userMerchant = await merchant.findOne({ 
       where: { email: email },
-      include: {
-        model: member,
-    } });
-    //restructuring the userMerchant values
-    // const memberDetails = userMerchant.members.map(({ dataValues: { email ,password,type} }) => ({email,password,type}));
-    // userMerchant={...userMerchant.dataValues,members:memberDetails}
-    // console.log(userMerchant)
+      });
+
     //for memeber login with merchent details
     if (!userMerchant) {
       const newMember = await member.findOne({
@@ -247,7 +246,7 @@ const login = async (req, res, next) => {
           ],
         },
       });
-      if (!newMember) throw next(createError(200, "false", "No User found"));
+      if (!newMember) throw next(createError(200, "false", "No User found",401));
       userMerchant = {
         merchant_id: newMember.merchant_id,
         password: newMember.password,
@@ -288,11 +287,13 @@ const login = async (req, res, next) => {
       { expiresIn: "24h" }
     );
     const presentDate = new Date();
-    if (presentDate > userMerchant.expiry) {
-      await merchant.update(
+    if (presentDate > userMerchant.expiry && userMerchant.subscription=="no") {
+      userMerchant.is_expired = 1;
+      userMerchant.trial_period="no"
+      merchant.update(
         {
           is_expired: 1,
-          trial_period: 0,
+          trial_period: "no",
         },
         {
           where: {
@@ -304,10 +305,11 @@ const login = async (req, res, next) => {
     // userMerchant=await merchant.findOne({ where: { email: email } });
     const code=( userMerchant.is_expired==0?200:1052);
     const stat=(userMerchant.is_expired==0?"OK":"false")
+    const message=(userMerchant.is_expired==0?"Merchant logged In successfully":"Trial Period is over Please Subscribe")
     res.status(200).json({
       status:stat,
       code: code,
-      message: "Merchant logged In successfully",
+      message,
       data: {
         merchant_id: userMerchant.merchant_id,
         email: userMerchant.email,
@@ -498,6 +500,12 @@ const editMercantProfile = async (req, res, next) => {
 const addDeal = async (req, res, next) => {
   try {
     const token_id = req.id;
+    const {count,rows}=await Deal.findAndCountAll({where:{
+      merchant_id: {
+        [Op.eq]: token_id
+      }
+    }})
+    if(count>9) throw next(createError(200,"ERROR","You Cannot add more than 10 deals",401))
     const fileName = req.file.filename;
     const imageUrl = baseUrl + fileName;
     const deal = req.body;
@@ -507,6 +515,7 @@ const addDeal = async (req, res, next) => {
       category_id: deal.category,
       image: imageUrl,
     };
+    console.log("creating deals")
     Deal.create(newDeal).then((result) => {
       res.status(200).json({
         status: "OK",
@@ -595,9 +604,16 @@ const getCategory = async (req, res, next) => {
 //add memeber
 const addMember = async (req, res, next) => {
   try {
+    //checking the number of member
+    const {count,rows}=await member.findAndCountAll({where:{
+      merchant_id:{
+        [Op.eq]:req.id
+      }
+    }})
+    if(count>4) throw next(createError(200,"ERROR","Cannnot add more than 5 members",401))
     //check if memeber is a merchant
     const membr = await member.findOne({ where: { email: req.body.email } });
-    if (membr) throw next(createError(400, "false", "Member already exist"));
+    if (membr) throw next(createError(200, "false", "Member already exist",401));
     const pass = encrypt(req.body.password)
     const data = { ...req.body, merchant_id: req.id, password: pass };
     await member.create(data).then((result) => {

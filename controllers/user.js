@@ -10,7 +10,7 @@ const verifyToken=async(req,res,next)=>{
         if (!token) throw next(createError(401,"ERROR","Invalid Token"))
         jwt.verify(token, process.env.JWT_SECERETE, (err, id) => {
     
-        if (err) throw next(createError(200, "ERROR", "Invalid token", 401));
+        if (err) throw next(createError(200, "ERROR", "Token Expired", 401));
         const verifyId = user.findOne({ where: { user_id: id.id } });
         if (!verifyId)
             throw next(createError(200, "ERROR", "Invalid User", 401));
@@ -45,6 +45,8 @@ const userRegister=async(req,res,next)=>{
         next(err)
     }
 }
+
+//edit user
 const editUser=async(req,res,next)=>{
     try {
         const {email,identity,name}=req.body
@@ -61,6 +63,8 @@ const editUser=async(req,res,next)=>{
         next(err)
     }
 }
+
+//filter deals
 
 
 module.exports={

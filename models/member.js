@@ -37,5 +37,5 @@ const member=sequelize.define("member",{
 
 member.belongsTo(merchant,{foreignKey:"merchant_id",onDelete:"CASCADE",onUpdate:"CASCADE"});
 merchant.hasMany(member,{foreignKey:"merchant_id",onDelete:"CASCADE",onUpdate:"CASCADE"});
-member.sync({alter:true})
+member.sync({alter:false    })
 module.exports=member;

@@ -55,7 +55,8 @@ const merchant = sequelize.define("merchant",
         type:DataTypes.INTEGER
     },
     subscription:{
-        type:DataTypes.STRING
+        type:DataTypes.STRING,
+        defaultValue:"no"
     },
     expiry:{
         type:DataTypes.DATE
@@ -72,7 +73,7 @@ const merchant = sequelize.define("merchant",
         type:DataTypes.STRING
     },
     mobile:{
-        type:DataTypes.BIGINT
+        type:DataTypes.STRING
     }
 
 },
@@ -80,5 +81,5 @@ const merchant = sequelize.define("merchant",
     freezeTableName: true
 })
 
-merchant.sync({alter : false})
+merchant.sync({alter : true})
 module.exports = merchant
