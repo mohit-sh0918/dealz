@@ -65,7 +65,13 @@ const editUser=async(req,res,next)=>{
 }
 
 //filter deals
-
+const filterDeals=async(req,res,next)=>{
+    try {
+        
+    } catch (err) {
+        
+    }
+}
 
 module.exports={
     userRegister,
