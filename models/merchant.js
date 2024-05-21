@@ -1,10 +1,6 @@
 const sequelize = require('./index')
 const { Sequelize, DataTypes } = require('sequelize')
 
-
-
-
-
 const merchant = sequelize.define("merchant", 
 {
     merchant_id: {

@@ -209,7 +209,16 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    let userMerchant = await merchant.findOne({ where: { email: email } });
+
+    let userMerchant = await merchant.findOne({ 
+      where: { email: email },
+      include: {
+        model: member,
+    } });
+    //restructuring the userMerchant values
+    // const memberDetails = userMerchant.members.map(({ dataValues: { email ,password,type} }) => ({email,password,type}));
+    // userMerchant={...userMerchant.dataValues,members:memberDetails}
+    // console.log(userMerchant)
     //for memeber login with merchent details
     if (!userMerchant) {
       const newMember = await member.findOne({
@@ -265,16 +274,13 @@ const login = async (req, res, next) => {
         createdAt: newMember.createdAt,
         updatedAt: newMember.updatedAt,
       };
-      isCorrect=decrypt(userMerchant.password)
-        if(!isCorrect)
-        throw next(createError(200, "false", "Invalid Credentials",401));
     }
     var isCorrect = await bcrypt.compare(password, userMerchant.password);
     if (!isCorrect)
       {
-        isCorrect=decrypt(userMerchant.password)
+        isCorrect=(decrypt(userMerchant.password)===password?true:false);
         if(!isCorrect)
-        throw next(createError(401, "false", "Invalid Credentials"));
+        throw next(createError(200, "false", "Invalid Credentials",401));
       }
     const auth_token = jwt.sign(
       { id: userMerchant.merchant_id },
@@ -610,7 +616,6 @@ const editMember = async (req, res, next) => {
   try {
     const data = req.body;
     const member_id = await member.findOne({ where: { id: data.member_id } });
-    console.log(member_id);
     if (!member_id)
       throw next(createError(400, "error", "Invalid Credentials"));
     if (req.id != member_id.merchant_id)
