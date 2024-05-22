@@ -22,7 +22,6 @@ const addNewUser= async(req,res,next)=>{
         package:'required',
         latitude:'required',
         longitude:'required',
-        referal_code:'required'
 
     });
     validator.check().then((matched)=>{
@@ -50,7 +49,6 @@ const editUser= async(req,res,next)=>{
         package:'required',
         latitude:'required',
         longitude:'required',
-        referal_code:'required'
     });
     validator.check().then((matched)=>{
         if(!matched){

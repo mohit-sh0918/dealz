@@ -1,6 +1,12 @@
 const createError = require("../helper/error")
 const user=require("../models/user")
 const jwt=require("jsonwebtoken")
+const merchant = require("../models/merchant");
+const Category = require("../models/category");
+const Deal = require("../models/deals");
+const sequelize=require("../models/index");
+const deal = require("../models/deals");
+const mail = require("../helper/mailer");
 
 //utility functions
 const verifyToken=async(req,res,next)=>{
@@ -21,7 +27,6 @@ const verifyToken=async(req,res,next)=>{
     next(err)
 }
 }
-
 
 //User registraion
 const userRegister=async(req,res,next)=>{
@@ -67,14 +72,110 @@ const editUser=async(req,res,next)=>{
 //filter deals
 const filterDeals=async(req,res,next)=>{
     try {
-        
+        const lat=req.body.latitude;
+        const long=req.body.longitude;
+        const radius=req.body.radius;
+        const country=req.body.country;
+        const category=req.body.category_id
+        const filterDeals = await merchant.findAll({
+            attributes: {
+                include: [
+                    [sequelize.literal(`
+                        6371 * acos(
+                            cos(radians(${lat})) * 
+                            cos(radians(latitude)) * 
+                            cos(radians(longitude) - radians(${long})) + 
+                            sin(radians(${lat})) * 
+                            sin(radians(latitude))
+                        )
+                    `), 'distance']
+                ]
+            },
+            having: sequelize.literal(`distance < ${radius}`),
+            where:{country},
+            include:{
+                model:deal, 
+                required:true,
+                where:{category_id:category}
+            },
+            order: [['distance','ASC']]
+        });
+        const deals = filterDeals.flatMap(merchant => 
+            merchant.deals.map(deal => ({
+                deal_id: deal.deal_id,
+                distance: merchant.dataValues.distance,
+                merchant_id: merchant.merchant_id,
+                category_id: deal.category_id,
+                deal_type: deal.type,
+                description1: deal.description1,
+                description2: deal.description2,
+                description3: deal.description3,
+                from_time: deal.time_from,
+                to_time: deal.time_to,
+                from_date: deal.date_from,
+                to_date: deal.date_to,
+                normal_price: deal.normal_price,
+                offer_price: deal.offer_price,
+                image: deal.image,
+                category_name: deal.category_id,
+                email: merchant.email,
+                contact: merchant.mobile,
+                business_name: merchant.business_name,
+                business_address1: merchant.business_address_1,
+                business_address2: merchant.business_address_2,
+                country: merchant.country,
+                currency: merchant.currency,
+                currencyvalue: merchant.currency_value,
+                package: merchant.package,
+                latitute: merchant.latitude,
+                longitude: merchant.longitude,
+                referal_code: merchant.referal_code,
+                auth_token: "", // Assuming you need to fetch auth token separately
+                business_image: merchant.image
+            }))
+        );
+
+        const response = {
+            deal: deals,
+            setting: [
+                { name: "", value: "" },
+                { name: "", value: "" }
+            ]
+        };
+        res.status(200).json(response)
     } catch (err) {
-        
+        next(err)
+    }
+}
+
+//send email
+const sendEmail=async(req,res,next)=>{
+    try {
+        let sender=req.body.sender;
+        let receiver=req.body.receiver;
+        const to_name=req.body.to_name;
+        const from_name=req.body.from_name;
+        sender=from_name+"<"+sender+">";
+        receiver=to_name+"<"+receiver+">";
+        const code=req.body.code;
+        let content=req.body.content
+        content=`<div>${content}<br>${code}</br></div>`
+        const info=await mail.mailSender(sender,receiver,'',content)
+        return res.status(200).json({
+            "status":"OK",
+            "message":"Email sent successfully",
+            "code":200,
+            "info":info
+        })
+    } catch (err){
+        next(err)
     }
 }
 
 module.exports={
     userRegister,
     editUser,
-    verifyToken
+    verifyToken,
+    filterDeals,
+    sendEmail
 }

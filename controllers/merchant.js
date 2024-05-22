@@ -171,6 +171,7 @@ const register = async (req, res, next) => {
         </div>
     `;
     mail.mailSender(
+      'CIS <cisbackend@gmail.com>',
       newMerchant.email,
       "Welcome to the Merchant Portal",
       emailBody
@@ -414,8 +415,15 @@ const editMercantProfile = async (req, res, next) => {
   try {
     const data = req.body;
     const id = req.id;
-    const fileName = req.file.filename;
-    const imageUrl = baseUrl + fileName;
+    let imageUrl;
+    if(!req.file)
+      {
+        imageUrl=await merchant.findOne({attributes:["image"],where:{merchant_id:id}})
+        imageUrl=imageUrl.dataValues.image
+      }else{
+        const fileName = req.file.filename;
+        imageUrl = baseUrl + fileName;
+      }
     const newdata = { ...data, image: imageUrl };
     await merchant.update(newdata, { where: { merchant_id: id } });
     const userMerchant = await merchant.findOne({ where: { merchant_id: id } });
@@ -448,53 +456,54 @@ const editMercantProfile = async (req, res, next) => {
       },
     });
   } catch (err) {
+    console.log(err)
     next(err);
   }
 };
-  //forget password
-  const forgetPassword = async (req, res, next) => {
-    try {
-      const email = req.body.email;
-      if (!email) throw next(createError(404, "error", "Invalid Credentials"));
-      const merchant_id = await merchant.findOne({
-        attributes: ["merchant_id"],
-        where: {
-          email: email,
-        },
-      });
-      if (!merchant_id)
-        throw next(createError(404, "error", "Invalid Credentials"));
-      const otp = generateOTP();
-      const date1 = new Date();
-      const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
-      const token = crypto.randomBytes(20).toString("hex");
+//forget password
+const forgetPassword = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+    if (!email) throw next(createError(404, "error", "Invalid Credentials"));
+    const merchant_id = await merchant.findOne({
+      attributes: ["merchant_id"],
+      where: {
+        email: email,
+      },
+    });
+    if (!merchant_id)
+      throw next(createError(404, "error", "Invalid Credentials"));
+    const otp = generateOTP();
+    const date1 = new Date();
+    const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
+    const token = crypto.randomBytes(20).toString("hex");
 
-      var data = {
-        otp: otp,
-        expire_time: finalDate,
-        merchant_id: merchant_id.merchant_id,
-        token: token,
-      };
-      OTP.create(data).then((result) => {
-        mail
-          .mailSender(
-            email,
-            "Reset Password",
-            `OTP for resetting the Password is ${otp}`
-          )
-          .then((data) => {
-            return res.status(200).json({
-              status: "OK",
-              code: 200,
-              message: "OTP sent to your email",
-              data: data,
-            });
+    var data = {
+      otp: otp,
+      expire_time: finalDate,
+      merchant_id: merchant_id.merchant_id,
+      token: token,
+    };
+    OTP.create(data).then((result) => {
+      mail
+        .mailSender(
+          email,
+          "Reset Password",
+          `OTP for resetting the Password is ${otp}`
+        )
+        .then((data) => {
+          return res.status(200).json({
+            status: "OK",
+            code: 200,
+            message: "OTP sent to your email",
+            data: data,
           });
-      });
-    } catch (err) {
-      next(err);
-    }
-  };
+        });
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 //add deals
 const addDeal = async (req, res, next) => {

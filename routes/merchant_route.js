@@ -17,7 +17,7 @@ router.post('/merchant/register', ((req, res, next)=> {
 router.post('/edit/merchant/profile', ((req, res, next)=> {
     merchant.uploadImg.single('image')(req, res, function(err) {
         if (err) {
-            console.error(err);
+            // console.error(err);
             return res.send(err.message);
         }
         next();
