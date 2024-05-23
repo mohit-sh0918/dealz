@@ -24,6 +24,7 @@ const verifyToken=async(req,res,next)=>{
         });
             next()
 }catch(err){
+    console.log(err)
     next(err)
 }
 }
@@ -34,7 +35,7 @@ const userRegister=async(req,res,next)=>{
         const deviceToken=req.body.device_token
         if(!deviceToken)throw next(createError(200,"ERROR","Invalid token",401))
         let data;
-        const [result]=await user.findOrCreate({where:{user_id:deviceToken}})
+        const [result]=await user.findOrCreate({where:{device_token:deviceToken}})
         const auth_token=jwt.sign({id:deviceToken},process.env.JWT_SECERETE,{expiresIn:'24h'})
         data={
             "user_id": result.user_id   , 
@@ -43,7 +44,7 @@ const userRegister=async(req,res,next)=>{
             "contact": result.contact, 
             "identity": result.identity,
             "auth_token":auth_token,
-            "device_token":deviceToken
+            "device_token":result.device_token
         }
             res.status(200).json(data)
     } catch (err) {
@@ -54,16 +55,24 @@ const userRegister=async(req,res,next)=>{
 //edit user
 const editUser=async(req,res,next)=>{
     try {
+        const deviceToken=req.id
         const {email,identity,name}=req.body
-        const [rowupdates,[updatedUser]]= await user.update({
+        const [rowupdates,updatedUser]= await user.update({
             email,
             identity,
             user_name:name
-        },{where:{user_id:req.id},returning:true,individualHooks:true}
+        },{where:{device_token:req.id},returning:false,individualHooks:true}
     )
-    
-    console.log(updatedUser)
-    res.status(200).json(updatedUser.dataValues)
+    const data=updatedUser.map(result=>({
+        "user_id": result.user_id, 
+        "user_name": result.user_name, 
+        "email": result.email, 
+        "contact": result.contact, 
+        "identity":result.identity, 
+        "device_token":result.dev, 
+        "auth_token": req.body.token    
+    }))
+    res.status(200).json(data[0])
     }catch(err){
         next(err)
     }
@@ -130,7 +139,7 @@ const filterDeals=async(req,res,next)=>{
                 latitute: merchant.latitude,
                 longitude: merchant.longitude,
                 referal_code: merchant.referal_code,
-                auth_token: "", // Assuming you need to fetch auth token separately
+                auth_token:'',
                 business_image: merchant.image
             }))
         );
@@ -171,11 +180,38 @@ const sendEmail=async(req,res,next)=>{
         next(err)
     }
 }
+//generate token
+const generateToken=async(req,res,next)=>{
+    try {
+        let data=await user.findOne({where:{device_token:req.id}})
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let referal=""
+        for (let i = 0; i < 6; i++) {
+            const randomIndex = Math.floor(Math.random() * charset.length);
+            referal += charset[randomIndex];
+        }
+        data={ 
+            "user_id": data.user_id, 
+            "user_name": data.user_name, 
+            "email": data.email, 
+            "contact": data.contact,
+            "identity": data.identity, 
+            "device_token":data.device_token, 
+            "auth_token": req.body.token,
+            "referal":referal+data.device_token
+        }
+        return res.status(200).json(data)
+    } catch (err) {
+        console.log(err)
+        next(err)
+    }
+}
 
 module.exports={
     userRegister,
     editUser,
     verifyToken,
     filterDeals,
-    sendEmail
+    sendEmail,
+    generateToken
 }

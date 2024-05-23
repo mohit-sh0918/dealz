@@ -6,4 +6,5 @@ router.post("/user/register",user.userRegister)
 router.post("/edit/user/profile",user.verifyToken,user.editUser)
 router.post("/filter/deal",user.filterDeals)
 router.post("/send/email",user.sendEmail)
+router.post("/user/generate/referral",user.verifyToken,user.generateToken)
 module.exports=router

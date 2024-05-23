@@ -12,7 +12,6 @@ const port = process.env.PORT || 8080;
 const user=require("./models/user")
 const path = require('path');
 
-
 app.use(express.json())
 app.use(express.urlencoded({ limit:'3mb', extended: true }));
 app.use(express.json());

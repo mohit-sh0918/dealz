@@ -4,13 +4,18 @@ const DataTypes=require("sequelize")
 const user=sequelize.define("user",{
     user_id:{
         type:DataTypes.INTEGER,
-        primaryKey:true,
+        unique:true,
         autoIncrement:true
+    },
+    device_token:{
+        type:DataTypes.BIGINT,
+        allowNull:false,
+        unique:true,
+        primaryKey:true
     },
     user_name:{
         type:DataTypes.STRING,
         defaultValue:"",
-
     },
     email:{
         type:DataTypes.STRING,
@@ -27,5 +32,5 @@ const user=sequelize.define("user",{
 },{
     freezeTableName:true
 })
-user.sync({alter:true})
+user.sync({alter:false})
 module.exports=user
