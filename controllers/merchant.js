@@ -605,6 +605,7 @@ const getCategory = async (req, res, next) => {
       data: {
         category: category,
       },
+      "setting":[{"name":"","value":""}]
     });
   } catch (err) {
     next(err);
