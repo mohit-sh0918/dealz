@@ -46,7 +46,11 @@ const userRegister=async(req,res,next)=>{
             "auth_token":auth_token,
             "device_token":result.device_token
         }
-            res.status(200).json(data)
+            res.status(200).json({
+                "status": "OK",
+                "message": "User registered successfully",
+                "data": data
+            })
     } catch (err) {
         next(err)
     }
@@ -72,7 +76,11 @@ const editUser=async(req,res,next)=>{
         "device_token":result.dev, 
         "auth_token": req.body.token    
     }))
-    res.status(200).json(data[0])
+    res.status(200).json({
+        "Status":"OK",
+        "message": "User updated successfully",
+        "data":data[0]
+    })
     }catch(err){
         next(err)
     }
@@ -186,7 +194,7 @@ const generateToken=async(req,res,next)=>{
         let data=await user.findOne({where:{device_token:req.id}})
         const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let referal=""
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 8; i++) {
             const randomIndex = Math.floor(Math.random() * charset.length);
             referal += charset[randomIndex];
         }
@@ -198,9 +206,13 @@ const generateToken=async(req,res,next)=>{
             "identity": data.identity, 
             "device_token":data.device_token, 
             "auth_token": req.body.token,
-            "referal":referal+data.device_token
+            "referal":referal
         }
-        return res.status(200).json(data)
+        return res.status(200).json({
+            "status":"OK",
+            "message":"Token generated successfully",
+            data
+        })
     } catch (err) {
         console.log(err)
         next(err)

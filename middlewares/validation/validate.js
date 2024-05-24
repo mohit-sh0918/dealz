@@ -26,7 +26,7 @@ const addNewUser= async(req,res,next)=>{
     });
     validator.check().then((matched)=>{
         if(!matched){
-            res.status(400).send({
+            res.status(200).send({
                 message: (Object.values(validator.errors))[0].message,
                 status: "false",
                 data: []
@@ -52,7 +52,7 @@ const editUser= async(req,res,next)=>{
     });
     validator.check().then((matched)=>{
         if(!matched){
-            res.status(400).send({
+            res.status(200).send({
                 message: (Object.values(validator.errors))[0].message,
                 status: "false",
                 data: []
@@ -70,7 +70,7 @@ const loginNewUser= async(req,res,next)=>{
     });
     validator.check().then((matched)=>{
         if(!matched){
-            res.status(400).send({
+            res.status(200).send({
                 message: (Object.values(validator.errors))[0].message,
                 status: "false",
                 data: []
@@ -79,9 +79,6 @@ const loginNewUser= async(req,res,next)=>{
         else{next()}
     });
 }
-
-//verify token
-
 
 //verify addDeal
 const addDeal = async (req, res, next) => {
@@ -102,7 +99,7 @@ const addDeal = async (req, res, next) => {
 
     validator.check().then((matched) => {
         if (!matched) {
-            res.status(400).send({
+            res.status(200).send({
                 message: (Object.values(validator.errors))[0].message,
                 status: "false",
                 data: []
@@ -133,7 +130,7 @@ const editDeal = async (req, res, next) => {
 
     validator.check().then((matched) => {
         if (!matched) {
-            res.status(400).send({
+            res.status(200).send({
                 message: (Object.values(validator.errors))[0].message,
                 status: "false",
                 data: []

@@ -8,7 +8,7 @@ const user=sequelize.define("user",{
         autoIncrement:true
     },
     device_token:{
-        type:DataTypes.BIGINT,
+        type:DataTypes.STRING,
         allowNull:false,
         unique:true,
         primaryKey:true
@@ -32,5 +32,5 @@ const user=sequelize.define("user",{
 },{
     freezeTableName:true
 })
-user.sync({alter:false})
+user.sync({alter:true})
 module.exports=user

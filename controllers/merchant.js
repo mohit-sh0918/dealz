@@ -524,7 +524,6 @@ const addDeal = async (req, res, next) => {
       category_id: deal.category,
       image: imageUrl,
     };
-    console.log("creating deals")
     Deal.create(newDeal).then((result) => {
       res.status(200).json({
         status: "OK",

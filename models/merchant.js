@@ -81,5 +81,5 @@ const merchant = sequelize.define("merchant",
     freezeTableName: true
 })
 
-merchant.sync({alter : true})
+merchant.sync({alter : false})
 module.exports = merchant
