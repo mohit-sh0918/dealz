@@ -6,10 +6,10 @@ const user_routes=require('./routes/user_routes')
 // const merchant = require('./models/merchant')
 // const deals = require('./models/deals')
 const cors=require('cors');
-const member = require("./models/member");
+// const member = require("./models/member");
 // const page=require("./images/T&C/terms&condition")
 const port = process.env.PORT || 8080;
-const user=require("./models/user")
+// const user=require("./models/user")
 const path = require('path');
 
 app.use(express.json())
@@ -21,6 +21,7 @@ app.use(cors("*"));
 //Routes
 // app.use('/static', express.static(path.join(__dirname, 'public')));
 app.get('/terms-and-conditions', (req, res) => {
+    res.setHeader('ngrok-skip-browser-warning', '4585   ');
     res.sendFile(path.join(__dirname, 'public', 'terms-and-conditions.html'));
 });
 app.use('/api', merchant_routes)

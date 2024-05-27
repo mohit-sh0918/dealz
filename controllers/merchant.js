@@ -47,7 +47,7 @@ const storage = multer.diskStorage({
 });
 const uploadImg = multer({
   storage: storage,
-  limits: {
+  limits: { 
     fileSize: 2 * 1024 * 1024, // 2MB limit
   },
   fileFilter: async function (req, file, cb) {
@@ -55,13 +55,9 @@ const uploadImg = multer({
       if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
         return cb(new Error("Only JPG, JPEG, and PNG files are allowed!"));
       }
-      if (file.size > 2 * 1024 * 1024) {
-        return cb(new Error("File size exceeds 2MB limit!"));
-      }
       cb(null, true);
-    } catch (error) {
-      cb(error, true);
-      console.log("Error", error);
+    } catch (Error) {
+      return cb(Error, false);
     }
   },
 });
@@ -70,10 +66,10 @@ const getCountryCode = async (req, res, next) => {
     const data = [];
     for (i in countryCode)
       data.push({
-        country_id: countryCode[i].ID,
-        code: countryCode[i].CountryCode,
-        name: countryCode[i].ValueEn,
-        currency: countryCode[i].CurrencyCode,
+        country_id: countryCode[i].country_id,
+        code: countryCode[i].currency_code,
+        name: countryCode[i].country,
+        currency: countryCode[i].currency_name,
       });
     return res.status(200).json({
       status: "OK",
@@ -603,8 +599,8 @@ const getCategory = async (req, res, next) => {
       message: "All the Category",
       data: {
         category: category,
+        "setting":[{"name":"","value":0},{"name":"","value":0}]
       },
-      "setting":[{"name":"","value":""}]
     });
   } catch (err) {
     next(err);

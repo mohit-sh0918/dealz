@@ -77,7 +77,7 @@ const editUser=async(req,res,next)=>{
         "auth_token": req.body.token    
     }))
     res.status(200).json({
-        "Status":"OK",
+        "status":"OK",
         "message": "User updated successfully",
         "data":data[0]
     })
@@ -153,11 +153,16 @@ const filterDeals=async(req,res,next)=>{
         );
 
         const response = {
-            deal: deals,
-            setting: [
-                { name: "", value: "" },
-                { name: "", value: "" }
-            ]
+            status:"OK",
+            message:"list of Deals",
+            data:{
+                deal: deals,
+                setting: [
+                    { name: "", value: "" },
+                    { name: "", value: "" }
+                ]
+            },
+            
         };
         res.status(200).json(response)
     } catch (err) {
@@ -206,7 +211,7 @@ const generateToken=async(req,res,next)=>{
             "identity": data.identity, 
             "device_token":data.device_token, 
             "auth_token": req.body.token,
-            "referal":referal
+            "referral":referal
         }
         return res.status(200).json({
             "status":"OK",

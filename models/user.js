@@ -32,5 +32,5 @@ const user=sequelize.define("user",{
 },{
     freezeTableName:true
 })
-user.sync({alter:true})
+user.sync({alter:false})
 module.exports=user
