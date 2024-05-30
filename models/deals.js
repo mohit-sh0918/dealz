@@ -88,7 +88,7 @@
     deal.belongsTo(category, { foreignKey: "category_id",onDelete: "CASCADE", onUpdate: "CASCADE" });
     merchant.hasMany(deal,{ foreignKey: "merchant_id", onDelete: "CASCADE", onUpdate: "CASCADE" });
     deal.belongsTo(merchant,{ foreignKey: "merchant_id",onDelete: "CASCADE", onUpdate: "CASCADE" });
-    deal.sync({alter:true})
+    deal.sync({alter:false})
 
 
     // Export models
