@@ -20,9 +20,11 @@ app.use(cors("*"));
 
 //Routes
 // app.use('/static', express.static(path.join(__dirname, 'public')));
-app.get('/terms-and-conditions', (req, res) => {
-    res.setHeader('ngrok-skip-browser-warning', '4585   ');
-    res.sendFile(path.join(__dirname, 'public', 'terms-and-conditions.html'));
+app.get('/merchants/terms-and-conditions', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'merchant-terms-and-conditions.html'));
+});
+app.get('/users/terms-and-conditions', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'user-terms-and-conditions.html'));
 });
 app.use('/api', merchant_routes)
 app.use('/api',user_routes)
