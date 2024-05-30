@@ -345,7 +345,7 @@ const merchantProfile = async (req, res, next) => {
       where: { merchant_id: id },
     });
     if (!userMerchant)
-      throw next(createError(404, "error", "Merchant not found"));
+      throw next(createError(200, "error", "Merchant not found",404));
     const code=( userMerchant.is_expired==0?200:1052);
     const stat=(userMerchant.is_expired==0?"OK":"false")
     return res.status(200).json({
@@ -460,7 +460,7 @@ const editMercantProfile = async (req, res, next) => {
 const forgetPassword = async (req, res, next) => {
   try {
     const email = req.body.email;
-    if (!email) throw next(createError(404, "error", "Invalid Credentials"));
+    if (!email) throw next(createError(200, "error", "Invalid Credentials",404));
     const merchant_id = await merchant.findOne({
       attributes: ["merchant_id"],
       where: {
@@ -468,7 +468,7 @@ const forgetPassword = async (req, res, next) => {
       },
     });
     if (!merchant_id)
-      throw next(createError(404, "error", "Invalid Credentials"));
+      throw next(createError(200, "error", "Invalid Credentials",400));
     const otp = generateOTP();
     const date1 = new Date();
     const finalDate = jsToEpoch(date1) + 10 * 60 * 1000;
@@ -638,9 +638,9 @@ const editMember = async (req, res, next) => {
     const data = req.body;
     const member_id = await member.findOne({ where: { id: data.member_id } });
     if (!member_id)
-      throw next(createError(400, "error", "Invalid Credentials"));
+      throw next(createError(200, "error", "Invalid Credentials",400));
     if (req.id != member_id.merchant_id)
-      throw next(createError(404, "error", "Unauthorised Access"));
+      throw next(createError(200, "error", "Unauthorised Access",404));
     const pass = bcrypt.hashSync(data.password, bcrypt.genSaltSync(10));
     const newData = { ...data, password: pass };
     const newMember = await member
@@ -661,9 +661,9 @@ const deleteMember = async (req, res, next) => {
   try {
     const data = req.body;
     const findMember = await member.findOne({ where: { id: data.member_id } });
-    if (!findMember) throw next(createError(400, false, "Invalid Member"));
+    if (!findMember) throw next(createError(200, false, "Invalid Member",400));
     if (req.id != findMember.merchant_id)
-      throw next(createError(404, false, "Unauthorised Access"));
+      throw next(createError(200, false, "Unauthorised Access",400));
     await member.destroy({ where: { id: data.member_id } }).then((result) => {
       res.status(200).json({
         status: "OK",
@@ -679,7 +679,7 @@ const deleteMember = async (req, res, next) => {
 const getAllMember = async (req, res, next) => {
   try {
     const findMember = await member.findAll({ where: { merchant_id: req.id } });
-    if (!findMember) throw next(createError(400, "error", "No Member Found"));
+    if (!findMember) throw next(createError(200, "error", "No Member Found",400));
     const data = ([] = findMember.map((findMember) => ({
       parent_id: findMember.id,
       name: findMember.name,
