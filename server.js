@@ -20,7 +20,7 @@ app.use(cors("*"));
 
 //Routes
 // app.use('/static', express.static(path.join(__dirname, 'public')));
-app.get('/merchants/terms-and-conditions', (req, res) => {
+app.get('/terms-and-conditions', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'merchant-terms-and-conditions.html'));
 });
 app.get('/users/terms-and-conditions', (req, res) => {
