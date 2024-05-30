@@ -7,7 +7,7 @@ const Deal = require("../models/deals");
 const sequelize=require("../models/index");
 const deal = require("../models/deals");
 const mail = require("../helper/mailer");
-
+const { Op,NOW } = require("sequelize");
 //utility functions
 const verifyToken=async(req,res,next)=>{
     try
@@ -91,9 +91,10 @@ const filterDeals=async(req,res,next)=>{
     try {
         const lat=req.body.latitude;
         const long=req.body.longitude;
-        const radius=req.body.radius;
+        const radius=req.body.radius/1000;
         const country=req.body.country;
-        const category=req.body.category_id
+        const category=req.body.category_id;
+        const limit=req.body.limit/10;  
         const filterDeals = await merchant.findAll({
             attributes: {
                 include: [
@@ -111,11 +112,32 @@ const filterDeals=async(req,res,next)=>{
             having: sequelize.literal(`distance < ${radius}`),
             where:{country},
             include:{
-                model:deal, 
+                model:deal,
+                attributes:[
+                    'deal_id',
+                    'category_id',
+                    'merchant_id',
+                    'date_from',
+                    'date_to',
+                    'description1',
+                    'description2',
+                    'description3',
+                    'normal_price',
+                    'offer_price',
+                    'time_from',
+                    'time_to',
+                    'type',
+                    'image',
+                    [sequelize.literal(`(normal_price-offer_price)/normal_price`),'discount']
+                ], 
                 required:true,
-                where:{category_id:category}
+                where:{
+                        category_id:category,
+                        date_to:{[Op.gte]:sequelize.literal('NOW()')}
+                },
+                order:sequelize.literal('discount DESC'),
+                limit:limit
             },
-            order: [['distance','ASC']]
         });
         const deals = filterDeals.flatMap(merchant => 
             merchant.deals.map(deal => ({
@@ -166,6 +188,7 @@ const filterDeals=async(req,res,next)=>{
         };
         res.status(200).json(response)
     } catch (err) {
+        console.log(err)
         next(err)
     }
 }
