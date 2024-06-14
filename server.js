@@ -14,7 +14,6 @@ const path = require('path');
 
 app.use(express.json())
 app.use(express.urlencoded({ limit:'3mb', extended: true }));
-app.use(express.json());
 app.use(express.static('images'));
 app.use(cors("*"));
 
